@@ -155,13 +155,58 @@
             <div id="admin-product-list" class="flex-1 overflow-y-auto p-3 space-y-2 pb-20"></div>
         </div>
 
-        <div id="admin-revenue" class="hidden flex-1 overflow-y-auto p-4 space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-blue-100"><p class="text-xs text-gray-400 font-bold uppercase">Hôm nay</p><p class="text-2xl font-bold text-blue-700 mt-1" id="rev-today">0đ</p><p id="order-count-today" class="text-xs text-blue-400">0 đơn</p></div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-purple-100"><p class="text-xs text-gray-400 font-bold uppercase">Tháng này</p><p class="text-2xl font-bold text-purple-700 mt-1" id="rev-month">0đ</p><p id="order-count-month" class="text-xs text-purple-400">0 đơn</p></div>
-            </div>
-            <button onclick="loadRevenue()" class="w-full py-3 bg-white border rounded-xl text-gray-600 font-bold">🔄 Cập nhật</button>
-        </div>
+        <div id="admin-revenue" class="hidden flex-1 flex flex-col overflow-hidden bg-gray-50 h-full">
+			<div class="p-4 grid grid-cols-2 gap-3 shrink-0">
+				<div class="bg-white p-4 rounded-2xl shadow-sm border border-indigo-50">
+					<p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Hôm nay</p>
+					<p class="text-xl font-bold text-indigo-700 mt-1 font-display truncate" id="rev-today">0đ</p>
+					<p id="order-count-today" class="text-[10px] text-indigo-400 mt-1 font-medium">0 đơn</p>
+				</div>
+				<div class="bg-white p-4 rounded-2xl shadow-sm border border-purple-50">
+					<p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tháng này</p>
+					<p class="text-xl font-bold text-purple-700 mt-1 font-display truncate" id="rev-month">0đ</p>
+					<p id="order-count-month" class="text-[10px] text-purple-400 mt-1 font-medium">0 đơn</p>
+				</div>
+			</div>
+
+			<div class="flex-1 bg-white rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.05)] flex flex-col overflow-hidden border-t border-gray-100 mx-2">
+				
+				<div class="p-4 border-b border-gray-100 z-10 bg-white">
+					<div class="flex items-center justify-between mb-3">
+						<h3 class="text-sm font-bold text-gray-800 flex items-center gap-2">📊 Chi tiết doanh số</h3>
+						<button onclick="loadRevenue(); viewRevenueDetail();" class="text-[10px] bg-gray-100 px-2 py-1 rounded text-gray-500 hover:bg-gray-200">🔄 Làm mới</button>
+					</div>
+					
+					<div class="flex gap-2 mb-3">
+						<div class="flex-1">
+							<label class="text-[9px] font-bold text-gray-400 block mb-1 uppercase">Từ ngày</label>
+							<input type="date" id="filter-start" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-indigo-500">
+						</div>
+						<div class="flex-1">
+							<label class="text-[9px] font-bold text-gray-400 block mb-1 uppercase">Đến ngày</label>
+							<input type="date" id="filter-end" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-indigo-500">
+						</div>
+						<div class="flex items-end">
+							<button onclick="viewRevenueDetail()" class="bg-indigo-600 text-white w-9 h-9 rounded-lg flex items-center justify-center shadow-md active:bg-indigo-700 transition-transform">
+								🔍
+							</button>
+						</div>
+					</div>
+
+					<div class="flex justify-between items-center bg-indigo-50 p-2.5 rounded-xl border border-indigo-100">
+						<span class="text-xs text-indigo-600 font-bold" id="filter-count">0 đơn hàng</span>
+						<span class="text-base font-bold text-indigo-700 font-display" id="filter-sum">0đ</span>
+					</div>
+					
+					<button onclick="exportRevenueReport()" class="w-full mt-2 text-[10px] text-emerald-600 font-bold border border-emerald-200 bg-emerald-50 py-2 rounded-lg hover:bg-emerald-100">
+						📥 Xuất Excel (Theo ngày đã chọn)
+					</button>
+				</div>
+
+				<div id="revenue-list" class="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50 pb-20">
+					</div>
+			</div>
+		</div>
     </div>
 
     <div id="payment-screen" class="hidden h-screen flex flex-col bg-gray-50">
@@ -187,23 +232,53 @@
     </div>
 
     <div id="history-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg h-[85vh] flex flex-col overflow-hidden">
-            <div class="p-4 border-b flex justify-between items-center bg-gray-50"><h3 class="font-bold text-gray-800">Lịch sử giao dịch</h3><button onclick="document.getElementById('history-modal').classList.add('hidden')" class="text-2xl text-gray-400">×</button></div>
-            <div id="history-list" class="flex-1 overflow-y-auto p-2 space-y-2 bg-gray-100"></div>
-            <div id="history-detail-panel" class="hidden fixed bottom-0 left-0 w-full md:absolute md:w-full md:h-2/3 bg-white rounded-t-2xl shadow-[0_-5px_30px_rgba(0,0,0,0.1)] flex flex-col z-50 transition-transform duration-300">
-                <div class="p-4 border-b flex justify-between items-center bg-blue-600 text-white rounded-t-2xl">
-                    <div><h4 class="font-bold text-lg" id="hist-detail-id">#Order</h4><p class="text-xs opacity-80" id="hist-detail-time">...</p></div>
-                    <button onclick="document.getElementById('history-detail-panel').classList.add('hidden')" class="bg-white/20 hover:bg-white/30 p-2 rounded-full">▼</button>
-                </div>
-                <div class="flex-1 overflow-y-auto p-0"><table class="w-full history-table"><thead><tr><th>Tên SP / Mã</th><th class="text-right">SL</th><th class="text-right">Giá</th><th class="text-right">Tổng</th></tr></thead><tbody id="hist-detail-items"></tbody></table></div>
-                <div class="p-4 bg-gray-50 border-t space-y-2">
-                    <div class="flex justify-between text-sm"><span class="text-gray-500">Tổng tiền hàng:</span><span class="font-bold text-gray-800" id="hist-detail-total">0đ</span></div>
-                    <div class="flex justify-between text-sm"><span class="text-gray-500">Khách đưa:</span><span class="font-bold text-blue-600" id="hist-detail-received">---</span></div>
-                    <div class="flex justify-between text-lg pt-2 border-t border-dashed border-gray-300"><span class="font-bold text-orange-600">Tiền thối lại:</span><span class="font-bold text-orange-600" id="hist-detail-change">---</span></div>
-                </div>
-            </div>
-        </div>
-    </div>
+		<div class="bg-white rounded-xl shadow-2xl w-full max-w-lg h-[85vh] flex flex-col overflow-hidden">
+			<div class="p-4 border-b flex justify-between items-center bg-gray-50">
+				<h3 class="font-bold text-gray-800">Lịch sử giao dịch</h3>
+				<button onclick="document.getElementById('history-modal').classList.add('hidden')" class="text-2xl text-gray-400">×</button>
+			</div>
+			<div id="history-list" class="flex-1 overflow-y-auto p-2 space-y-2 bg-gray-100"></div>
+		</div>
+	</div>
+
+	<div id="history-detail-panel" class="hidden fixed bottom-0 left-0 w-full h-[70vh] bg-white rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.2)] flex flex-col z-[60] transition-transform duration-300">
+		<div class="p-4 border-b flex justify-between items-center bg-blue-600 text-white rounded-t-2xl">
+			<div>
+				<h4 class="font-bold text-lg" id="hist-detail-id">#Order</h4>
+				<p class="text-xs opacity-80" id="hist-detail-time">...</p>
+			</div>
+			<button onclick="document.getElementById('history-detail-panel').classList.add('hidden')" class="bg-white/20 hover:bg-white/30 p-2 rounded-full">▼</button>
+		</div>
+		
+		<div class="flex-1 overflow-y-auto p-0">
+			<table class="w-full history-table">
+				<thead>
+					<tr>
+						<th>Tên SP / Mã</th>
+						<th class="text-right">SL</th>
+						<th class="text-right">Giá</th>
+						<th class="text-right">Tổng</th>
+					</tr>
+				</thead>
+				<tbody id="hist-detail-items"></tbody>
+			</table>
+		</div>
+		
+		<div class="p-4 bg-gray-50 border-t space-y-2">
+			<div class="flex justify-between text-sm">
+				<span class="text-gray-500">Tổng tiền hàng:</span>
+				<span class="font-bold text-gray-800" id="hist-detail-total">0đ</span>
+			</div>
+			<div class="flex justify-between text-sm">
+				<span class="text-gray-500">Khách đưa:</span>
+				<span class="font-bold text-blue-600" id="hist-detail-received">---</span>
+			</div>
+			<div class="flex justify-between text-lg pt-2 border-t border-dashed border-gray-300">
+				<span class="font-bold text-orange-600">Tiền thối lại:</span>
+				<span class="font-bold text-orange-600" id="hist-detail-change">---</span>
+			</div>
+		</div>
+	</div>
 
     <div id="recall-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col">
@@ -541,10 +616,199 @@
         // --- EXCEL & ADMIN ---
         function openAdminScreen() { if(currentUserRole!=='admin') return showAlert("Từ chối", "Chỉ Admin mới có quyền truy cập!", 'error'); if(html5QrcodeScanner) html5QrcodeScanner.pause(); document.getElementById('scan-screen').classList.add('hidden'); document.getElementById('admin-screen').classList.remove('hidden'); renderProductList(); }
         function closeAdminScreen() { document.getElementById('admin-screen').classList.add('hidden'); document.getElementById('scan-screen').classList.remove('hidden'); if(html5QrcodeScanner) html5QrcodeScanner.resume(); }
-        function switchAdminTab(tab) {
-            if(tab === 'products') { document.getElementById('admin-products').classList.remove('hidden'); document.getElementById('admin-revenue').classList.add('hidden'); document.getElementById('tab-products').className = "flex-1 py-2.5 rounded-lg font-bold bg-blue-600 text-white shadow-sm"; document.getElementById('tab-revenue').className = "flex-1 py-2.5 rounded-lg font-bold bg-white text-gray-500 border hover:bg-gray-50"; } 
-            else { document.getElementById('admin-products').classList.add('hidden'); document.getElementById('admin-revenue').classList.remove('hidden'); document.getElementById('tab-revenue').className = "flex-1 py-2.5 rounded-lg font-bold bg-blue-600 text-white shadow-sm"; document.getElementById('tab-products').className = "flex-1 py-2.5 rounded-lg font-bold bg-white text-gray-500 border hover:bg-gray-50"; loadRevenue(); }
-        }
+        function switchAdminTab(t) { 
+			if(t === 'products'){
+				document.getElementById('admin-products').classList.remove('hidden');
+				document.getElementById('admin-revenue').classList.add('hidden');
+				// (Giữ nguyên phần chỉnh style cho tab...)
+				document.getElementById('tab-products').className="flex-1 py-2.5 rounded-lg font-bold bg-blue-600 text-white shadow-sm";
+				document.getElementById('tab-revenue').className="flex-1 py-2.5 rounded-lg font-bold bg-white text-gray-500 border hover:bg-gray-50";
+			} else {
+				document.getElementById('admin-products').classList.add('hidden');
+				document.getElementById('admin-revenue').classList.remove('hidden');
+				document.getElementById('tab-revenue').className="flex-1 py-2.5 rounded-lg font-bold bg-blue-600 text-white shadow-sm";
+				document.getElementById('tab-products').className="flex-1 py-2.5 rounded-lg font-bold bg-white text-gray-500 border hover:bg-gray-50";
+				
+				loadRevenue(); // Tải tổng quan (Cards)
+				
+				// --- MỚI: Tự động chọn ngày hôm nay & tải chi tiết ---
+				const today = new Date().toISOString().split('T')[0];
+				document.getElementById('filter-start').value = today;
+				document.getElementById('filter-end').value = today;
+				
+				// Cập nhật cả cho phần export cũ (nếu bạn còn giữ hàm exportRevenueReport)
+				if(document.getElementById('report-start')) {
+					 document.getElementById('report-start').value = today;
+					 document.getElementById('report-end').value = today;
+				}
+
+				viewRevenueDetail(); // Gọi hàm tải danh sách chi tiết
+			}
+		}
+		
+		// --- HÀM XEM CHI TIẾT DOANH SỐ (MỚI) ---
+		async function viewRevenueDetail() {
+			const startVal = document.getElementById('filter-start').value;
+			const endVal = document.getElementById('filter-end').value;
+
+			if (!startVal || !endVal) return showAlert("Thiếu ngày", "Vui lòng chọn ngày bắt đầu và kết thúc", 'error');
+
+			const d1 = new Date(startVal);
+			const d2 = new Date(endVal);
+			
+			// 1. Kiểm tra ngày kết thúc phải sau ngày bắt đầu
+			if (d2 < d1) return showAlert("Lỗi ngày", "Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu", 'error');
+
+			// 2. Kiểm tra giới hạn 1 tháng (31 ngày)
+			const diffTime = Math.abs(d2 - d1);
+			const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+			if (diffDays > 31) return showAlert("Giới hạn", "Vui lòng chỉ xem tối đa 31 ngày để đảm bảo tốc độ.", 'error');
+
+			// Chuẩn bị thời gian query (Full ngày)
+			const startISO = new Date(startVal + 'T00:00:00').toISOString();
+			const endISO = new Date(endVal + 'T23:59:59').toISOString();
+
+			// Hiện trạng thái đang tải
+			document.getElementById('revenue-list').innerHTML = '<div class="text-center py-8 text-gray-400 text-xs animate-pulse">⏳ Đang tải dữ liệu...</div>';
+
+			// Gọi Supabase
+			const { data: orders, error } = await client
+				.from('orders')
+				.select('*')
+				.gte('created_at', startISO)
+				.lte('created_at', endISO)
+				.order('created_at', { ascending: false });
+
+			if (error) {
+				document.getElementById('revenue-list').innerHTML = '<div class="text-center text-red-400 text-xs">Lỗi tải dữ liệu</div>';
+				return showAlert("Lỗi", error.message, 'error');
+			}
+
+			// Xử lý hiển thị
+			if (!orders || orders.length === 0) {
+				document.getElementById('revenue-list').innerHTML = '<div class="text-center py-10 text-gray-400 flex flex-col items-center"><span class="text-4xl mb-2">📭</span><span>Không có đơn hàng nào</span></div>';
+				document.getElementById('filter-count').innerText = "0 đơn";
+				document.getElementById('filter-sum').innerText = "0đ";
+				return;
+			}
+
+			// Tính tổng
+			const total = orders.reduce((sum, o) => sum + o.total_amount, 0);
+			document.getElementById('filter-count').innerText = `${orders.length} đơn`;
+			document.getElementById('filter-sum').innerText = formatMoney(total);
+
+			// Render Danh sách (Tái sử dụng hàm viewHistoryDetail để xem chi tiết khi click)
+			document.getElementById('revenue-list').innerHTML = orders.map(o => {
+				const noteSafe = encodeURIComponent(o.note || "");
+				return `
+				<div onclick="viewHistoryDetail(${o.id}, ${o.total_amount}, '${o.created_at}', '${noteSafe}')" class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center active:bg-gray-50 transition-colors cursor-pointer mb-2">
+					<div class="flex items-center gap-3">
+						<div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">#${o.id}</div>
+						<div>
+							<div class="text-xs font-bold text-gray-700">${new Date(o.created_at).toLocaleString('vi-VN')}</div>
+							<div class="text-[10px] text-gray-400 flex items-center gap-1">
+								<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> ${o.staff_email.split('@')[0]}
+							</div>
+						</div>
+					</div>
+					<div class="text-right">
+						<div class="text-sm font-bold text-blue-600 font-display">${formatMoney(o.total_amount)}</div>
+						<div class="text-[10px] text-gray-400">Chi tiết ></div>
+					</div>
+				</div>
+				`;
+			}).join('');
+		}
+		
+		// --- HÀM XUẤT BÁO CÁO EXCEL ---
+		async function exportRevenueReport() {
+			const startStr = document.getElementById('filter-start').value;
+			const endStr = document.getElementById('filter-end').value;
+
+			if (!startStr || !endStr) return showAlert("Thiếu thông tin", "Vui lòng chọn ngày bắt đầu và kết thúc!", 'error');
+
+			// Tạo thời gian chuẩn ISO (Từ 00:00:00 ngày đầu -> 23:59:59 ngày cuối)
+			const startDate = new Date(startStr + 'T00:00:00').toISOString();
+			const endDate = new Date(endStr + 'T23:59:59').toISOString();
+
+			showAlert("Đang xử lý", "Đang tải dữ liệu báo cáo...", 'info');
+
+			// Lấy đơn hàng KÈM THEO chi tiết sản phẩm (dùng Query Relation của Supabase)
+			const { data: orders, error } = await client
+				.from('orders')
+				.select('*, order_items(*)') 
+				.gte('created_at', startDate)
+				.lte('created_at', endDate)
+				.order('created_at', { ascending: false });
+
+			if (error) return showAlert("Lỗi", error.message, 'error');
+			if (!orders || orders.length === 0) return showAlert("Trống", "Không có đơn hàng nào trong khoảng thời gian này.", 'info');
+
+			// Chế biến dữ liệu phẳng để đưa vào Excel
+			const excelData = [];
+			let totalRevenuePeriod = 0;
+
+			orders.forEach(order => {
+				const orderDate = new Date(order.created_at).toLocaleString('vi-VN');
+				const staffName = order.staff_email.split('@')[0];
+				
+				// Nếu đơn hàng có sản phẩm con
+				if (order.order_items && order.order_items.length > 0) {
+					order.order_items.forEach(item => {
+						excelData.push({
+							"Mã Đơn": order.id,
+							"Ngày Giờ": orderDate,
+							"Nhân Viên": staffName,
+							"Tên Sản Phẩm": item.product_name,
+							"Số Lượng": item.quantity,
+							"Đơn Giá": item.price,
+							"Thành Tiền (SP)": item.total,
+							"Tổng Đơn Hàng": "" // Để trống cho đẹp, đỡ rối mắt
+						});
+					});
+					// Thêm 1 dòng tổng kết đơn (tùy chọn, để dễ nhìn trong Excel)
+					excelData.push({
+						"Mã Đơn": `Tổng #${order.id}`,
+						"Ngày Giờ": "", "Nhân Viên": "", "Tên Sản Phẩm": "---", "Số Lượng": "", "Đơn Giá": "",
+						"Thành Tiền (SP)": "",
+						"Tổng Đơn Hàng": order.total_amount
+					});
+				} else {
+					// Trường hợp hiếm: đơn lỗi không có chi tiết
+					excelData.push({
+						"Mã Đơn": order.id,
+						"Ngày Giờ": orderDate,
+						"Nhân Viên": staffName,
+						"Tên Sản Phẩm": "(Không có chi tiết)",
+						"Số Lượng": 0, "Đơn Giá": 0, "Thành Tiền (SP)": 0,
+						"Tổng Đơn Hàng": order.total_amount
+					});
+				}
+				totalRevenuePeriod += order.total_amount;
+			});
+
+			// Thêm dòng tổng doanh thu cuối cùng của cả đợt
+			excelData.push({}); // Dòng trống cách ra
+			excelData.push({
+				"Mã Đơn": "TỔNG CỘNG",
+				"Tổng Đơn Hàng": totalRevenuePeriod
+			});
+
+			// Xuất file bằng SheetJS
+			const ws = XLSX.utils.json_to_sheet(excelData);
+			
+			// Chỉnh độ rộng cột cho đẹp
+			ws['!cols'] = [{wch:10}, {wch:20}, {wch:15}, {wch:30}, {wch:10}, {wch:15}, {wch:15}, {wch:15}];
+
+			const wb = XLSX.utils.book_new();
+			XLSX.utils.book_append_sheet(wb, ws, "Bao_Cao_Chi_Tiet");
+			
+			// Tên file: DoanhThu_TuNgay_DenNgay.xlsx
+			XLSX.writeFile(wb, `DoanhThu_${startStr}_${endStr}.xlsx`);
+			
+			closeAlert(); // Tắt thông báo
+		}
+		
         function renderProductList(search = "") {
             document.getElementById('admin-product-list').innerHTML = productsDB
                 .filter(p=> p.name.toLowerCase().includes(search.toLowerCase()) || (p.item_code && p.item_code.toLowerCase().includes(search.toLowerCase())) || (p.barcode && p.barcode.includes(search)))
