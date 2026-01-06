@@ -56,16 +56,33 @@
                 <span id="user-email" class="text-xs font-bold text-gray-400 uppercase">Staff</span>
                 <div class="flex items-center gap-2"><span class="text-lg font-bold text-gray-800">Bán Hàng</span><span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span></div>
             </div>
-            <div class="flex gap-2">
-				<button onclick="openCheckPriceModal()" class="bg-teal-50 text-teal-600 p-2 rounded-lg border border-teal-100 font-bold text-xs flex flex-col items-center min-w-[50px]">
-					<span>🔍 Giá</span>
-				</button>
-                <button onclick="showRecallModal()" class="bg-orange-50 text-orange-600 p-2 rounded-lg border border-orange-100 font-bold text-xs flex flex-col items-center min-w-[50px]"><span id="parked-count" class="hidden text-red-500 font-bold">0</span><span>🛑 Chờ</span></button>
-                <button onclick="openHistory()" class="bg-blue-50 text-blue-600 p-2 rounded-lg border border-blue-100 font-bold text-xs flex flex-col items-center min-w-[50px]"><span>🕒 Lịch sử</span></button>
-                <button id="btn-open-admin" onclick="openAdminScreen()" class="hidden bg-purple-50 text-purple-600 p-2 rounded-lg border border-purple-100 font-bold text-xs flex flex-col items-center min-w-[50px]"><span>⚙️ Quản lý</span></button>
-                <button onclick="confirmLogout()" class="bg-gray-100 text-gray-600 p-2 rounded-lg border border-gray-200 font-bold text-xs flex flex-col items-center min-w-[50px]"><span>🚪</span><span>Thoát</span></button>
-            </div>
+            
         </div>
+
+		<div class="bg-white p-3 flex justify-between items-center shadow-sm z-20 sticky top-0">
+			<div class="flex gap-2">
+				<button onclick="openCheckPriceModal()" class="bg-teal-50 text-teal-600 p-2 rounded-lg border border-teal-100 font-bold text-xs flex flex-col items-center min-w-[50px]">
+					<span>🔍 Kiểm tra giá</span>
+				</button>
+
+				<button onclick="showRecallModal()" class="bg-orange-50 text-orange-600 p-2 rounded-lg border border-orange-100 font-bold text-xs flex flex-col items-center min-w-[50px] relative active:bg-orange-100">
+					<span id="parked-count" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-sm">0</span>
+					<span>🛑 GD chờ</span>
+				</button>
+
+				<button onclick="openHistory()" class="bg-blue-50 text-blue-600 p-2 rounded-lg border border-blue-100 font-bold text-xs flex flex-col items-center min-w-[50px]">
+					<span>🕒 Lịch sử GD</span>
+				</button>
+				
+				<button id="btn-open-admin" onclick="openAdminScreen()" class="hidden bg-purple-50 text-purple-600 p-2 rounded-lg border border-purple-100 font-bold text-xs flex flex-col items-center min-w-[50px]">
+					<span>⚙️ Quản lý</span>
+				</button>
+				
+				<button onclick="confirmLogout()" class="bg-gray-100 text-gray-600 p-2 rounded-lg border border-gray-200 font-bold text-xs flex flex-col items-center min-w-[50px]">
+					<span>🚪 Thoát</span>
+				</button>
+			</div>
+		</div>
 
         <div class="relative bg-black flex-1 flex flex-col items-center justify-center overflow-hidden group">
             <div id="reader" class="w-full h-full absolute inset-0 object-cover"></div>
@@ -76,27 +93,38 @@
             <div id="camera-placeholder" class="z-10 text-center"><button onclick="startScanner()" class="bg-white/20 backdrop-blur-md border border-white/40 text-white px-8 py-4 rounded-full font-bold shadow-lg">📷 BẬT CAMERA</button></div>
         </div>
 
-        <div class="bg-white p-4 border-t rounded-t-2xl -mt-4 z-20 shadow-[0_-5px_20px_rgba(0,0,0,0.1)]">
-            <div class="mb-3 relative"><input type="text" id="manual-input" placeholder="Nhập mã hoặc số lượng (vd: 5*)" class="w-full bg-gray-100 p-3 pl-4 rounded-xl text-lg font-semibold outline-none" onkeyup="handleManualInput(event)"></div>
-            <div id="last-scanned-card" class="bg-green-50 p-3 rounded-xl border border-green-100 flex items-center justify-between hidden scan-success mb-3">
-                <div>
-                    <h3 id="last-item-name" class="font-bold text-gray-800 line-clamp-1">...</h3>
-                    <div id="last-item-info" class="text-[11px] text-gray-500 font-semibold mb-1">...</div>
-                    <div id="last-item-price-container"></div>
-                </div>
-                <div class="bg-white px-3 py-1 rounded-lg border border-green-200"><span id="last-item-qty" class="text-lg font-bold text-green-600">+1</span></div>
-            </div>
-            <div class="grid grid-cols-2 gap-3 mb-3">
-                <button onclick="voidTransaction()" class="bg-red-50 text-red-600 py-3 rounded-xl font-bold text-sm">🗑 HỦY ĐƠN</button>
-                <button onclick="parkOrder()" class="bg-orange-50 text-orange-600 py-3 rounded-xl font-bold text-sm">⏸ TẠM LƯU</button>
-            </div>
-        </div>
+        <div class="sticky bottom-0 z-50 bg-white border-t rounded-t-2xl shadow-[0_-5px_20px_rgba(0,0,0,0.1)] -mt-4 pb-[env(safe-area-inset-bottom)]">
+    
+			<div class="p-4 pb-2">
+				<div class="mb-3 relative">
+					<input type="text" id="manual-input" placeholder="Nhập mã hoặc số lượng (vd: 5*)" class="w-full bg-gray-100 p-3 pl-4 rounded-xl text-lg font-semibold outline-none" onkeyup="handleManualInput(event)">
+				</div>
+				
+				<div id="last-scanned-card" class="bg-green-50 p-3 rounded-xl border border-green-100 flex items-center justify-between hidden scan-success mb-3">
+					<div>
+						<h3 id="last-item-name" class="font-bold text-gray-800 line-clamp-1">...</h3>
+						<div id="last-item-info" class="text-[11px] text-gray-500 font-semibold mb-1">...</div>
+						<div id="last-item-price-container"></div>
+					</div>
+					<div class="bg-white px-3 py-1 rounded-lg border border-green-200"><span id="last-item-qty" class="text-lg font-bold text-green-600">+1</span></div>
+				</div>
 
-        <div class="p-4 bg-white border-t pb-8">
-            <button onclick="goToPayment()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold text-xl shadow-lg flex justify-between items-center active:scale-95 transition-transform">
-                <div class="flex items-center gap-2"><span class="bg-white/20 px-2 py-1 rounded text-sm" id="quick-count">0</span><span class="text-sm font-normal opacity-80">Giỏ hàng</span></div><span id="quick-total">0đ &rarr;</span>
-            </button>
-        </div>
+				<div class="grid grid-cols-2 gap-3">
+					<button onclick="voidTransaction()" class="bg-red-50 text-red-600 py-3 rounded-xl font-bold text-sm">🗑 HỦY ĐƠN</button>
+					<button onclick="parkOrder()" class="bg-orange-50 text-orange-600 py-3 rounded-xl font-bold text-sm">⏸ TẠM LƯU</button>
+				</div>
+			</div>
+
+			<div class="px-4 pb-4 pt-2">
+				<button onclick="goToPayment()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold text-xl shadow-lg flex justify-between items-center active:scale-95 transition-transform">
+					<div class="flex items-center gap-2">
+						<span class="bg-white/20 px-2 py-1 rounded text-sm" id="quick-count">0</span>
+						<span class="text-sm font-normal opacity-80">Giỏ hàng</span>
+					</div>
+					<span id="quick-total">0đ &rarr;</span>
+				</button>
+			</div>
+		</div>
     </div>
 
     <div id="admin-screen" class="hidden fixed inset-0 z-40 bg-gray-50 flex flex-col h-full animate-fade-in">
