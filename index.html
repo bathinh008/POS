@@ -162,7 +162,7 @@
 
 					<div class="grid grid-cols-2 gap-3">
 						<button onclick="voidTransaction()" class="bg-red-50 text-red-600 py-3.5 rounded-xl font-bold text-xs hover:bg-red-100 transition-colors">🗑 HỦY ĐƠN</button>
-						<button onclick="parkOrder()" class="bg-orange-50 text-orange-600 py-3.5 rounded-xl font-bold text-xs hover:bg-orange-100 transition-colors">⏸ TẠM LƯU</button>
+						<button onclick="parkOrder()" class="bg-orange-50 text-orange-600 py-3.5 rounded-xl font-bold text-xs hover:bg-orange-100 transition-colors">⏸ HOÃN GIAO DỊCH</button>
 					</div>
 				</div>
 
@@ -420,6 +420,10 @@
 
         let productsDB = [], cart = [], parkedOrders = JSON.parse(localStorage.getItem('pos_parked_orders')) || [];
         let html5QrcodeScanner = null, currentUserEmail = "", currentMultiplier = 1, currentUserRole = "staff";
+		
+		let lastScannedCode = null;
+		let lastScanTime = 0;
+		const SCAN_DELAY = 2000;
 
 		// --- LOGIC KIỂM TRA GIÁ MỚI ---
 		let isCheckPriceMode = false;
@@ -652,7 +656,25 @@
 			html5QrcodeScanner.start(
 				{ facingMode: "environment" }, 
 				config, 
-				(t) => addToCart(t), 
+				(decodedText) => {
+					const currentTime = Date.now();
+
+					// LOGIC CHỐNG QUÉT LIÊN TỤC:
+					// Nếu mã này GIỐNG mã vừa quét VÀ thời gian chưa đủ 2 giây -> BỎ QUA
+					if (decodedText === lastScannedCode && (currentTime - lastScanTime < SCAN_DELAY)) {
+						return; 
+					}
+
+					// Nếu mã khác hoặc đã đủ thời gian chờ -> Chấp nhận
+					lastScannedCode = decodedText;
+					lastScanTime = currentTime;
+
+					// Phát tiếng "Bíp" nhẹ để báo hiệu đã nhận (nếu muốn)
+					playBeepSound(); 
+
+					// Thêm vào giỏ
+					addToCart(decodedText);
+				}, 
 				() => {}
 			).catch(err => {
 				console.error("Lỗi khởi động Camera:", err);
@@ -673,6 +695,24 @@
 				}
 			});
 		}
+		
+		function playBeepSound() {
+			// Tạo âm thanh bíp ngắn bằng Web Audio API (không cần file mp3)
+			const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+			const oscillator = audioCtx.createOscillator();
+			const gainNode = audioCtx.createGain();
+
+			oscillator.connect(gainNode);
+			gainNode.connect(audioCtx.destination);
+
+			oscillator.type = "sine"; // Kiểu âm thanh
+			oscillator.frequency.value = 800; // Tần số (độ cao)
+			gainNode.gain.value = 0.1; // Âm lượng nhỏ vừa phải
+
+			oscillator.start();
+			setTimeout(() => oscillator.stop(), 100); // Kêu trong 0.1 giây rồi tắt
+		}
+		
         async function stopScanner() {
             if (html5QrcodeScanner) {
                 try { await html5QrcodeScanner.stop(); html5QrcodeScanner = null; document.getElementById('camera-placeholder').classList.remove('hidden'); document.getElementById('btn-stop-cam').classList.add('hidden'); } 
@@ -1104,7 +1144,20 @@
 
         // --- GENERAL ---
         function confirmLogout() { showAlert("Đăng xuất", "Bạn chắc chắn muốn thoát phiên làm việc?", 'confirm', forceLogout); }
-        function handleManualInput(e) { const val = e.target.value.trim(); if (val.endsWith('*') && val.length > 1) { setMultiplier(parseInt(val)); e.target.value = ''; return; } if (e.key === 'Enter') { addToCart(val); e.target.value = ''; } }
+        function handleManualInput(e) { 
+			const val = e.target.value.trim(); 
+			
+			if (val.endsWith('*') && val.length > 1) { 
+				setMultiplier(parseInt(val)); 
+				e.target.value = ''; 
+				return; 
+			} 
+			if (e.key === 'Enter') { 
+				addToCart(val); 
+				e.target.value = '';
+				e.target.blur();
+			} 
+		}
         function setMultiplier(n) { if(!isNaN(n) && n>0) { currentMultiplier = n; document.getElementById('multiplier-badge').classList.remove('hidden'); document.getElementById('multiplier-val').innerText = n; } }
         async function loadRevenue() { const { data: orders } = await client.from('orders').select('*'); if(!orders) return; const today = new Date().toDateString(), thisMonth = new Date().getMonth(); let sumD=0, cntD=0, sumM=0, cntM=0; orders.forEach(o => { const d=new Date(o.created_at); if(d.toDateString()===today) {sumD+=o.total_amount; cntD++} if(d.getMonth()===thisMonth) {sumM+=o.total_amount; cntM++} }); document.getElementById('rev-today').innerText=formatMoney(sumD); document.getElementById('order-count-today').innerText=cntD+" đơn"; document.getElementById('rev-month').innerText=formatMoney(sumM); document.getElementById('order-count-month').innerText=cntM+" đơn"; }
         
@@ -1115,7 +1168,7 @@
             if (parkedOrders.length === 0) { container.innerHTML = '<p class="text-center text-gray-400 py-4">Chưa có đơn hàng nào.</p>'; return; }
             container.innerHTML = parkedOrders.map((o, i) => {
                 const itemsDetailHtml = o.items.map(item => `<div class="flex justify-between items-start py-2 border-b border-dashed border-gray-200 last:border-0"><div class="flex-1 pr-2"><div class="text-sm font-bold text-gray-700">${item.name}</div><div class="text-[10px] text-gray-500 mt-0.5"><span class="bg-gray-100 px-1 rounded border">Mã: ${item.barcode || '---'}</span></div></div><div class="text-right"><div class="text-sm font-bold text-blue-600">x${item.quantity}</div></div></div>`).join('');
-                return `<div class="bg-white border rounded-xl shadow-sm mb-4 overflow-hidden"><div class="bg-orange-50 p-3 flex justify-between items-center border-b border-orange-100"><div><span class="font-bold text-orange-800 text-sm">Đơn #${i + 1}</span></div><div class="flex gap-2"><button onclick="restoreOrder(${i})" class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold">Lấy lại</button><button onclick="deleteParked(${i})" class="text-red-500 border border-red-200 px-2 py-1.5 rounded text-xs">Xóa</button></div></div><div class="p-3 bg-white">${itemsDetailHtml}</div></div>`;
+                return `<div class="bg-white border rounded-xl shadow-sm mb-4 overflow-hidden"><div class="bg-orange-50 p-3 flex justify-between items-center border-b border-orange-100"><div><span class="font-bold text-orange-800 text-sm">Đơn #${i + 1}</span></div><div class="flex gap-2"><button onclick="restoreOrder(${i})" class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold">Gọi lại</button><button onclick="deleteParked(${i})" class="text-red-500 border border-red-200 px-2 py-1.5 rounded text-xs">Xóa</button></div></div><div class="p-3 bg-white">${itemsDetailHtml}</div></div>`;
             }).join('');
         }
         function restoreOrder(i) { 
@@ -1129,7 +1182,16 @@
         // --- CHECK PRICE ---
         function openCheckPriceModal() { document.getElementById('check-price-modal').classList.remove('hidden'); document.getElementById('check-result').innerHTML = '<p class="text-gray-400">Mời nhập mã hoặc tên sản phẩm</p>'; setTimeout(() => document.getElementById('check-input').focus(), 100); }
         function handleCheckPriceInput(e) {
-            if (e.key === 'Enter') { const val = e.target.value.trim().toLowerCase(); if (!val) return; const p = productsDB.find(x => (x.barcode && x.barcode == val) || (x.item_code && x.item_code.toLowerCase() == val)) || productsDB.find(x => x.name.toLowerCase().includes(val)); renderCheckResult(p); e.target.value = ''; }
+            if (e.key === 'Enter') { 
+				const val = e.target.value.trim().toLowerCase(); 
+				if (!val) return; 
+				
+				const p = productsDB.find(x => (x.barcode && x.barcode == val) || (x.item_code && x.item_code.toLowerCase() == val)) || productsDB.find(x => x.name.toLowerCase().includes(val)); 
+				
+				renderCheckResult(p); 
+				e.target.value = '';
+				e.target.blur();
+			}
         }
         function renderCheckResult(p) {
             const el = document.getElementById('check-result');
