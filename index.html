@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>POS Pro Excel Import</title>
+    <title>Mini POS</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -470,6 +470,7 @@
 				const val = e.target.value.trim();
 				if (val) processCheckPrice(val);
 				e.target.value = '';
+				e.target.blur();
 			}
 		}
 
