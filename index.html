@@ -1247,7 +1247,7 @@
         function showRecallModal() {
             document.getElementById('recall-modal').classList.remove('hidden');
             const container = document.getElementById('parked-list');
-            if (parkedOrders.length === 0) { container.innerHTML = '<p class="text-center text-gray-400 py-4">Chưa có đơn hàng nào.</p>'; return; }
+            if (parkedOrders.length === 0) { container.innerHTML = '<p class="text-center text-gray-400 py-4">Chưa có giao dịch nào.</p>'; return; }
             container.innerHTML = parkedOrders.map((o, i) => {
                 const itemsDetailHtml = o.items.map(item => `<div class="flex justify-between items-start py-2 border-b border-dashed border-gray-200 last:border-0"><div class="flex-1 pr-2"><div class="text-sm font-bold text-gray-700">${item.name}</div><div class="text-[10px] text-gray-500 mt-0.5"><span class="bg-gray-100 px-1 rounded border">Mã: ${item.barcode || '---'}</span></div></div><div class="text-right"><div class="text-sm font-bold text-blue-600">x${item.quantity}</div></div></div>`).join('');
                 return `<div class="bg-white border rounded-xl shadow-sm mb-4 overflow-hidden"><div class="bg-orange-50 p-3 flex justify-between items-center border-b border-orange-100"><div><span class="font-bold text-orange-800 text-sm">Giao dịch #${i + 1}</span></div><div class="flex gap-2"><button onclick="restoreOrder(${i})" class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold">Gọi lại</button><button onclick="deleteParked(${i})" class="text-red-500 border border-red-200 px-2 py-1.5 rounded text-xs">Xóa</button></div></div><div class="p-3 bg-white">${itemsDetailHtml}</div></div>`;
@@ -1259,7 +1259,22 @@
         }
         function deleteParked(i) { showAlert("Xóa đơn chờ", "Bạn muốn xóa đơn lưu tạm này?", 'confirm', () => { parkedOrders.splice(i,1); localStorage.setItem('pos_parked_orders',JSON.stringify(parkedOrders)); updateParkedBadge(); showRecallModal(); }); }
         function updateParkedBadge() { const b=document.getElementById('parked-count'); b.innerText=parkedOrders.length; parkedOrders.length>0?b.classList.remove('hidden'):b.classList.add('hidden'); }
-        function voidTransaction() { showAlert("Hủy đơn", "Bạn muốn xóa toàn bộ sản phẩm trong giỏ?", 'confirm', () => { cart=[]; updateCartUI(); document.getElementById('last-scanned-card').classList.add('hidden'); }); }
+        function voidTransaction() {
+			// 1. Kiểm tra: Nếu giỏ hàng trống thì báo lỗi và DỪNG NGAY
+			if (cart.length === 0) {
+				return showAlert("Giỏ hàng trống", "Chưa có sản phẩm nào để xóa!", 'info');
+			}
+
+			// 2. Nếu có hàng thì mới hiện bảng hỏi xác nhận
+			showAlert("Hủy đơn", "Bạn muốn xóa toàn bộ sản phẩm trong giỏ?", 'confirm', () => {
+				cart = [];
+				updateCartUI(); // Hàm này sẽ tự động cập nhật lại localStorage thành rỗng luôn
+				document.getElementById('last-scanned-card').classList.add('hidden');
+				
+				// (Tùy chọn) Rung nhẹ báo hiệu đã xóa
+				if(navigator.vibrate) navigator.vibrate(50);
+			});
+		}
         
         // --- CHECK PRICE ---
         function openCheckPriceModal() { document.getElementById('check-price-modal').classList.remove('hidden'); document.getElementById('check-result').innerHTML = '<p class="text-gray-400">Mời nhập mã hoặc tên sản phẩm</p>'; setTimeout(() => document.getElementById('check-input').focus(), 100); }
