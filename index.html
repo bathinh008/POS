@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mini POS</title>
     
+	<link rel="manifest" href="manifest.json">
+	<meta name="theme-color" content="#2563eb">
+	<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2697/2697430.png">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -470,7 +476,7 @@
 				const val = e.target.value.trim();
 				if (val) processCheckPrice(val);
 				e.target.value = '';
-				document.getElementById('check-price-input').blur();
+				e.target.blur();
 			}
 		}
 
@@ -1324,5 +1330,15 @@
 			}
 		});
     </script>
+	<script>
+		// Đăng ký PWA Service Worker
+		if ('serviceWorker' in navigator) {
+			window.addEventListener('load', () => {
+				navigator.serviceWorker.register('./sw.js')
+					.then(reg => console.log('PWA đã sẵn sàng:', reg.scope))
+					.catch(err => console.log('Lỗi PWA:', err));
+			});
+		}
+	</script>
 </body>
 </html>
