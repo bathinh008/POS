@@ -64,7 +64,7 @@
 
     <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 p-4">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm">
-            <div class="text-center mb-8"><h1 class="text-3xl font-bold text-blue-600">POS APP</h1><p class="text-gray-400 text-sm">Hệ thống bán hàng</p></div>
+            <div class="text-center mb-8"><h1 class="text-3xl font-bold text-blue-600">MINI POS APP</h1><p class="text-gray-400 text-sm">Hệ thống bán hàng</p></div>
             <div class="space-y-4">
 				<input type="email" id="email" placeholder="Email" class="w-full p-4 border bg-gray-50 rounded-xl outline-none" onkeyup="handleLoginKey(event)">
 				
@@ -481,7 +481,14 @@
         const SUPABASE_URL = 'https://renqusdcczlhrglbclhe.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlbnF1c2RjY3psaHJnbGJjbGhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTIyMzUsImV4cCI6MjA4MDU4ODIzNX0.kF960FS-VvAM2rkNo9kVHfmGAkpwrmlZ5Vf9-QFiC2E';
         
-        const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+			auth: {
+				storage: sessionStorage,
+				autoRefreshToken: true,
+				persistSession: true,
+				detectSessionInUrl: true
+			}
+		});
         const PLACEHOLDER_IMG = "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2250%22%20height%3D%2250%22%20viewBox%3D%220%200%2050%2050%22%3E%3Crect%20width%3D%2250%22%20height%3D%2250%22%20fill%3D%22%23e5e7eb%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%239ca3af%22%3EIMG%3C%2Ftext%3E%3C%2Fsvg%3E";
 
         let productsDB = [];
