@@ -86,26 +86,26 @@
             
         </div>
 
-		<div class="bg-white p-3 flex justify-between items-center shadow-sm z-20 sticky top-0">
-			<div class="flex gap-2">
-				<button onclick="toggleCheckPriceMode()" class="bg-teal-50 text-teal-600 p-2 rounded-lg border border-teal-100 font-bold text-xs flex flex-col items-center min-w-[50px]">
-					<span>🔍 Kiểm tra giá</span>
+		<div class="bg-white px-3 py-2 border-b shadow-sm z-20 sticky top-0">
+			<div class="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+				<button onclick="toggleCheckPriceMode()" class="flex items-center gap-2 bg-teal-50 text-teal-700 px-4 py-2 rounded-full border border-teal-100 font-bold text-xs whitespace-nowrap active:scale-95 transition-transform shrink-0">
+					<span>🔍</span> <span>Check giá</span>
 				</button>
 
-				<button onclick="showRecallModal()" class="bg-orange-50 text-orange-600 p-2 rounded-lg border border-orange-100 font-bold text-xs flex flex-col items-center min-w-[50px] relative active:bg-orange-100">
-					<span id="parked-count" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-sm">0</span>
-					<span>🛑 GD chờ</span>
+				<button onclick="showRecallModal()" class="flex items-center gap-2 bg-orange-50 text-orange-600 px-4 py-2 rounded-full border border-orange-100 font-bold text-xs whitespace-nowrap active:scale-95 transition-transform shrink-0 relative">
+					<span id="parked-count" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center border border-white">0</span>
+					<span>🛑 Đơn chờ</span>
 				</button>
 
-				<button onclick="openHistory()" class="bg-blue-50 text-blue-600 p-2 rounded-lg border border-blue-100 font-bold text-xs flex flex-col items-center min-w-[50px]">
-					<span>🕒 Lịch sử GD</span>
+				<button onclick="openHistory()" class="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-full border border-blue-100 font-bold text-xs whitespace-nowrap active:scale-95 transition-transform shrink-0">
+					<span>🕒 Lịch sử</span>
 				</button>
 				
-				<button id="btn-open-admin" onclick="openAdminScreen()" class="hidden bg-purple-50 text-purple-600 p-2 rounded-lg border border-purple-100 font-bold text-xs flex flex-col items-center min-w-[50px]">
+				<button id="btn-open-admin" onclick="openAdminScreen()" class="hidden flex items-center gap-2 bg-purple-50 text-purple-600 px-4 py-2 rounded-full border border-purple-100 font-bold text-xs whitespace-nowrap active:scale-95 transition-transform shrink-0">
 					<span>⚙️ Quản lý</span>
 				</button>
 				
-				<button onclick="confirmLogout()" class="bg-gray-100 text-gray-600 p-2 rounded-lg border border-gray-200 font-bold text-xs flex flex-col items-center min-w-[50px]">
+				<button onclick="confirmLogout()" class="flex items-center gap-2 bg-gray-100 text-gray-600 px-4 py-2 rounded-full border border-gray-200 font-bold text-xs whitespace-nowrap active:scale-95 transition-transform shrink-0">
 					<span>🚪 Thoát</span>
 				</button>
 			</div>
@@ -129,8 +129,9 @@
 				<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
 			</button>
 			
-			<div id="multiplier-badge" class="hidden absolute top-20 left-1/2 transform -translate-x-1/2 z-30 bg-red-600 text-white px-4 py-1 rounded-full font-bold shadow-lg border border-white animate-bounce">
-				Nhân: x<span id="multiplier-val">1</span>
+			<div id="multiplier-badge" 
+				 class="hidden absolute top-10 inset-x-0 mx-auto w-fit z-30 bg-red-600 text-white px-4 py-1 rounded-full font-bold shadow-lg border border-white animate-bounce">
+				Số lượng: x<span id="multiplier-val">1</span><span> Sản phẩm</span>
 			</div>
 
 			<div id="camera-placeholder" class="z-20 text-center absolute">
@@ -232,6 +233,8 @@
         <div class="p-3 bg-white border-b flex gap-2">
             <button onclick="switchAdminTab('products')" id="tab-products" class="flex-1 py-2.5 rounded-lg font-bold bg-blue-600 text-white">📦 Hàng hóa</button>
             <button onclick="switchAdminTab('revenue')" id="tab-revenue" class="flex-1 py-2.5 rounded-lg font-bold bg-white text-gray-500 border">💰 Doanh thu</button>
+			<button onclick="switchAdminTab('users')" id="tab-users" class="flex-1 py-2.5 rounded-lg font-bold bg-white text-gray-500 border">👥 Nhân viên</button>
+			<button onclick="switchAdminTab('system')" id="tab-system" class="flex-1 py-2.5 rounded-lg font-bold bg-white text-gray-500 border">🔧 Hệ thống</button>
         </div>
         
         <div id="admin-products" class="flex-1 flex flex-col overflow-hidden">
@@ -304,6 +307,37 @@
 					</div>
 			</div>
 		</div>
+		
+		<div id="admin-users" class="hidden flex-1 flex flex-col overflow-hidden bg-gray-50 h-full">
+			<div class="p-3 bg-white border-b shadow-sm">
+				<h3 class="font-bold text-gray-700">Danh sách tài khoản</h3>
+				<p class="text-[10px] text-gray-400">Trạng thái cập nhật mỗi 30 giây</p>
+			</div>
+			<div id="user-list" class="flex-1 overflow-y-auto p-3 space-y-2 pb-20">
+				</div>
+		</div>
+		
+		<div id="admin-system" class="hidden flex-1 flex flex-col bg-gray-50 h-full p-4 space-y-4">
+			<div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+				<div class="flex justify-between items-center mb-4">
+					<div>
+						<h3 class="font-bold text-gray-800 text-lg">Chế độ Bảo trì 🚧</h3>
+						<p class="text-xs text-gray-500">Khi bật, chỉ Admin mới có thể đăng nhập.</p>
+					</div>
+					<label class="relative inline-flex items-center cursor-pointer">
+						<input type="checkbox" id="sys-maintenance-toggle" class="sr-only peer">
+						<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+					</label>
+				</div>
+
+				<div class="space-y-2">
+					<label class="text-xs font-bold text-gray-500 uppercase">Thông báo hiển thị</label>
+					<textarea id="sys-message" rows="3" class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="Nhập lời nhắn cho nhân viên..."></textarea>
+				</div>
+
+				<button onclick="saveSystemSettings()" class="mt-4 w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform">LƯU CÀI ĐẶT</button>
+			</div>
+		</div>
     </div>
 
     <div id="payment-screen" class="hidden h-dvh w-full flex flex-col bg-gray-50 absolute inset-0 z-50">
@@ -313,9 +347,9 @@
         </div>
         <div class="flex-1 overflow-y-auto p-4 space-y-3 pb-40" id="cart-list"></div>
         <div class="sticky bottom-0 z-30 bg-white p-5 border-t rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom)]">
-			<div class="flex justify-between items-end mb-4 border-b border-dashed pb-4">
-				<span class="text-gray-500 font-medium">Tổng tiền hàng:</span>
-				<span id="final-total" class="text-3xl font-bold text-blue-700">0đ</span>
+			<div class="flex flex-col items-center justify-center mb-6 border-b border-dashed pb-6">
+				<span class="text-gray-400 font-bold text-xs uppercase tracking-widest mb-1">Tổng tiền cần thu</span>
+				<span id="final-total" class="text-5xl font-bold text-blue-600 tracking-tight">0đ</span>
 			</div>
 			<div class="mb-4">
 				<div class="flex justify-between mb-1">
@@ -401,12 +435,33 @@
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col max-h-[90vh]">
             <div class="p-4 border-b font-bold text-lg">Thông tin sản phẩm</div>
             <div class="p-4 overflow-y-auto space-y-3">
-                <input type="hidden" id="prod-id">
-                <div><label class="text-xs font-bold text-gray-500">Tên SP *</label><input type="text" id="prod-name" class="w-full border p-2 rounded focus:ring-1 focus:ring-blue-500"></div>
-                <div class="grid grid-cols-2 gap-2"><div><label class="text-xs font-bold text-gray-500">Mã vạch</label><input type="text" id="prod-barcode" class="w-full border p-2 rounded"></div><div><label class="text-xs font-bold text-blue-600">Mã Item</label><input type="text" id="prod-itemcode" class="w-full border p-2 rounded border-blue-200 bg-blue-50"></div></div>
-                <div class="grid grid-cols-2 gap-2"><div><label class="text-xs font-bold text-gray-500">Đơn vị</label><input type="text" id="prod-unit" class="w-full border p-2 rounded"></div><div><label class="text-xs font-bold text-gray-500">Link Ảnh</label><input type="text" id="prod-image" class="w-full border p-2 rounded"></div></div>
-                <div class="grid grid-cols-2 gap-2"><div><label class="text-xs font-bold text-gray-500">Giá bán *</label><input type="number" id="prod-price" class="w-full border p-2 rounded"></div><div><label class="text-xs font-bold text-red-500">Giá KM</label><input type="number" id="prod-sale" class="w-full border p-2 rounded bg-red-50"></div></div>
-            </div>
+				<input type="hidden" id="prod-id">
+				
+				<div>
+					<label class="text-xs font-bold text-gray-500">Tên SP *</label>
+					<input type="text" id="prod-name" class="w-full border p-2 rounded focus:ring-1 focus:ring-blue-500">
+				</div>
+
+				<div class="grid grid-cols-2 gap-2">
+					<div><label class="text-xs font-bold text-gray-500">Mã vạch</label><input type="text" id="prod-barcode" class="w-full border p-2 rounded"></div>
+					<div><label class="text-xs font-bold text-blue-600">Mã Item</label><input type="text" id="prod-itemcode" class="w-full border p-2 rounded border-blue-200 bg-blue-50"></div>
+				</div>
+
+				<div class="grid grid-cols-2 gap-2">
+					<div><label class="text-xs font-bold text-gray-500">Đơn vị tính</label><input type="text" id="prod-unit" class="w-full border p-2 rounded"></div>
+					<div>
+						<label class="text-xs font-bold text-purple-600">Tồn kho 📦</label>
+						<input type="number" id="prod-quantity" class="w-full border-2 border-purple-200 bg-purple-50 p-2 rounded font-bold text-purple-700">
+					</div>
+				</div>
+
+				<div class="grid grid-cols-2 gap-2">
+					<div><label class="text-xs font-bold text-gray-500">Giá bán *</label><input type="number" id="prod-price" class="w-full border p-2 rounded"></div>
+					<div><label class="text-xs font-bold text-red-500">Giá KM</label><input type="number" id="prod-sale" class="w-full border p-2 rounded bg-red-50"></div>
+				</div>
+				
+				<div><label class="text-xs font-bold text-gray-500">Link Ảnh</label><input type="text" id="prod-image" class="w-full border p-2 rounded"></div>
+			</div>
             <div class="p-4 border-t grid grid-cols-2 gap-3"><button onclick="document.getElementById('product-modal').classList.add('hidden')" class="bg-gray-100 text-gray-600 py-2 rounded font-bold">Hủy</button><button onclick="saveProduct()" class="bg-blue-600 text-white py-2 rounded font-bold">Lưu</button></div>
         </div>
     </div>
@@ -423,8 +478,8 @@
 	</div>
 
     <script>
-        const SUPABASE_URL = 'https://gpmuckoydhrokpioltem.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwbXVja295ZGhyb2twaW9sdGVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MTMzNTcsImV4cCI6MjA4MTI4OTM1N30.Fqe5U2hm_fERI6ZLc_FQ1SMh5F4sYOrxr8JqLlwLKI0';
+        const SUPABASE_URL = 'https://renqusdcczlhrglbclhe.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlbnF1c2RjY3psaHJnbGJjbGhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTIyMzUsImV4cCI6MjA4MDU4ODIzNX0.kF960FS-VvAM2rkNo9kVHfmGAkpwrmlZ5Vf9-QFiC2E';
         
         const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const PLACEHOLDER_IMG = "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2250%22%20height%3D%2250%22%20viewBox%3D%220%200%2050%2050%22%3E%3Crect%20width%3D%2250%22%20height%3D%2250%22%20fill%3D%22%23e5e7eb%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2212%22%20fill%3D%22%239ca3af%22%3EIMG%3C%2Ftext%3E%3C%2Fsvg%3E";
@@ -531,19 +586,39 @@
 
         // === SYSTEM FUNCTIONS ===
         async function checkSession() {
-            try {
-                const { data: { session }, error } = await client.auth.getSession();
-                if (error) throw error;
-                if (session) {
-                    currentUserEmail = session.user.email;
-                    document.getElementById('user-email').innerText = currentUserEmail.split('@')[0];
-                    document.getElementById('login-screen').classList.add('hidden'); document.getElementById('scan-screen').classList.remove('hidden');
-                    fetchUserRole(currentUserEmail); fetchProducts(); updateParkedBadge();
+			try {
+				const { data: { session }, error } = await client.auth.getSession();
+				if (error) throw error;
+				
+				if (session) {
+					currentUserEmail = session.user.email;
 					
+					// 1. Lấy Role trước
+					await fetchUserRole(currentUserEmail); 
+
+					// 2. --- KIỂM TRA BẢO TRÌ NGAY SAU KHI CÓ ROLE ---
+					const { data: settings } = await client.from('app_settings').select('*').eq('id', 1).single();
+					
+					if (settings && settings.maintenance_mode && currentUserRole !== 'admin') {
+						showAlert("BẢO TRÌ", settings.maintenance_message || "Hệ thống đang bảo trì.", 'error', () => {
+							forceLogout();
+						});
+						return; // Dừng lại, không cho vào App
+					}
+					// ------------------------------------------------
+
+					// Nếu qua được cửa ải trên thì mới vào App
+					document.getElementById('user-email').innerText = currentUserEmail.split('@')[0];
+					document.getElementById('login-screen').classList.add('hidden'); 
+					document.getElementById('scan-screen').classList.remove('hidden');
+					
+					fetchProducts(); 
+					updateParkedBadge();
 					updateCartUI();
-                }
-            } catch (err) { console.log(err); forceLogout(); }
-        }
+					startHeartbeat();
+				}
+			} catch (err) { console.log(err); forceLogout(); }
+		}
         async function handleLogin() {
 			// 1. Lấy giá trị và TRIM (xóa khoảng trắng thừa đầu đuôi)
 			const email = document.getElementById('email').value.trim();
@@ -576,13 +651,23 @@
         async function forceLogout() { await client.auth.signOut(); localStorage.clear(); window.location.reload(); }
         
         async function fetchUserRole(email) {
-            try {
-                const { data } = await client.from('user_roles').select('role').eq('email', email).maybeSingle();
-                currentUserRole = data ? data.role : 'staff';
-                if(currentUserRole === 'admin') document.getElementById('btn-open-admin').classList.remove('hidden');
-                else document.getElementById('btn-open-admin').classList.add('hidden');
-            } catch (e) { console.log(e); }
-        }
+			try {
+				const { data } = await client
+					.from('app_users') 
+					.select('role')
+					.eq('email', email)
+					.maybeSingle(); // Dùng maybeSingle cho an toàn
+
+				currentUserRole = data ? data.role : 'staff';
+				
+				// Cập nhật giao diện ngay lập tức
+				if(currentUserRole === 'admin') {
+					document.getElementById('btn-open-admin').classList.remove('hidden');
+				} else {
+					document.getElementById('btn-open-admin').classList.add('hidden');
+				}
+			} catch (e) { console.log(e); }
+		}
 
         // ======================= CUSTOM MODAL LOGIC (TRÁI TIM UI MỚI) =======================
         let modalCallback = null;
@@ -743,35 +828,68 @@
 
         // --- CART ---
         function addToCart(key) {
+			// 1. Chế độ xem giá
 			if (isCheckPriceMode) {
 				processCheckPrice(key);
 				return; 
 			}
-		
-            const k = key.trim().toLowerCase(); if(!k) return;
-            const p = productsDB.find(x => (x.barcode==k || (x.item_code && x.item_code.toLowerCase()==k))) || productsDB.find(x => x.name.toLowerCase().includes(k));
-            
-            if(!p) return showAlert("Không tìm thấy", `Không có sản phẩm nào khớp với mã "${key}"`, 'error');
-            if(p.is_locked) return showAlert("Sản phẩm khóa", "Sản phẩm này đang tạm ngưng kinh doanh.", 'error');
 
-            const qty = currentMultiplier;
-            const price = (p.sale_price && p.sale_price < p.price) ? p.sale_price : p.price;
-            const exist = cart.find(x => x.id === p.id);
-            if(exist) exist.quantity += qty; else cart.push({...p, quantity: qty, finalPrice: price});
-            
-            updateCartUI();
-            
-            document.getElementById('last-item-name').innerText = p.name;
-            document.getElementById('last-item-info').innerText = `Mã: ${p.barcode || '---'} | ĐVT: ${p.unit || '---'}`;
-            const priceEl = document.getElementById('last-item-price-container');
-            if(p.sale_price && p.sale_price < p.price) { priceEl.innerHTML = `<span class="line-through text-gray-400 text-xs mr-2">${formatMoney(p.price)}</span><span class="text-red-600 font-bold text-sm">${formatMoney(p.sale_price)}</span>`; } 
-            else { priceEl.innerHTML = `<span class="font-bold text-blue-600 text-sm">${formatMoney(p.price)}</span>`; }
-            document.getElementById('last-item-qty').innerText = "+" + qty;
-            
-            document.getElementById('last-scanned-card').classList.remove('hidden', 'scan-success'); void document.getElementById('last-scanned-card').offsetWidth; document.getElementById('last-scanned-card').classList.add('scan-success');
-            if(currentMultiplier > 1) { currentMultiplier = 1; document.getElementById('multiplier-badge').classList.add('hidden'); }
-            if(navigator.vibrate) navigator.vibrate(100);
-        }
+			const k = key.trim().toLowerCase(); if(!k) return;
+			
+			// 2. Tìm sản phẩm
+			const p = productsDB.find(x => (x.barcode==k || (x.item_code && x.item_code.toLowerCase()==k))) || productsDB.find(x => x.name.toLowerCase().includes(k));
+			
+			if(!p) return showAlert("Không tìm thấy", `Không có sản phẩm nào khớp với mã "${key}"`, 'error');
+			
+			// 3. Kiểm tra khóa sản phẩm
+			if(p.is_locked) return showAlert("Sản phẩm khóa", "Sản phẩm này đang tạm ngưng kinh doanh.", 'error');
+
+			// 4. KIỂM TRA TỒN KHO
+			if ((p.quantity || 0) <= 0) {
+				return showAlert("Hết hàng", `Sản phẩm "${p.name}" đã hết hàng trong kho!`, 'error');
+			}
+			
+			// Tìm xem món này đã có trong giỏ chưa
+			// (Lần khai báo đầu tiên - Giữ nguyên)
+			const exist = cart.find(x => x.id === p.id);
+			
+			// Logic kiểm tra số lượng tồn kho so với giỏ hàng
+			const currentQtyInCart = exist ? exist.quantity : 0;
+			if (currentQtyInCart + currentMultiplier > p.quantity) {
+					return showAlert("Không đủ hàng", `Trong kho chỉ còn ${p.quantity}, bạn đang mua quá số lượng!`, 'error');
+			}
+			
+			// 5. Thêm vào giỏ
+			const qty = currentMultiplier;
+			const price = (p.sale_price && p.sale_price < p.price) ? p.sale_price : p.price;
+			
+			if(exist) {
+				// --- ĐÃ SỬA: Ở đây không dùng 'const exist =' nữa mà dùng trực tiếp biến exist đã tìm thấy ở trên ---
+				exist.quantity += qty; 
+			} else {
+				cart.push({...p, quantity: qty, finalPrice: price});
+			}
+			
+			// 6. Cập nhật giao diện & Hiệu ứng
+			updateCartUI();
+			
+			document.getElementById('last-item-name').innerText = p.name;
+			document.getElementById('last-item-info').innerText = `Mã: ${p.barcode || '---'} | ĐVT: ${p.unit || '---'}`;
+			const priceEl = document.getElementById('last-item-price-container');
+			if(p.sale_price && p.sale_price < p.price) { 
+				priceEl.innerHTML = `<span class="line-through text-gray-400 text-xs mr-2">${formatMoney(p.price)}</span><span class="text-red-600 font-bold text-sm">${formatMoney(p.sale_price)}</span>`; 
+			} else { 
+				priceEl.innerHTML = `<span class="font-bold text-blue-600 text-sm">${formatMoney(p.price)}</span>`; 
+			}
+			document.getElementById('last-item-qty').innerText = "+" + qty;
+			
+			document.getElementById('last-scanned-card').classList.remove('hidden', 'scan-success'); 
+			void document.getElementById('last-scanned-card').offsetWidth; 
+			document.getElementById('last-scanned-card').classList.add('scan-success');
+			
+			if(currentMultiplier > 1) { currentMultiplier = 1; document.getElementById('multiplier-badge').classList.add('hidden'); }
+			if(navigator.vibrate) navigator.vibrate(100);
+		}
 
         function updateCartUI() {
             document.getElementById('quick-count').innerText = cart.reduce((s,i)=>s+i.quantity,0);
@@ -880,41 +998,47 @@
 
 			// 2. Nếu đủ tiền thì mới hiện popup xác nhận và xử lý database
 			showAlert("Thanh toán", "Xác nhận thanh toán đơn hàng này?", 'confirm', async () => {
-				
+    
+				// 1. Tạo đơn hàng (Giữ nguyên logic cũ)
 				const extra = { received_money: r, change_money: r - t };
-				
-				// Gửi dữ liệu lên Supabase
-				const { data: order, error } = await client
-					.from('orders')
-					.insert({ 
-						staff_email: currentUserEmail, 
-						total_amount: t, 
-						note: JSON.stringify(extra) 
-					})
-					.select()
-					.single();
+				const { data: order, error } = await client.from('orders').insert({ 
+					staff_email: currentUserEmail, total_amount: t, note: JSON.stringify(extra) 
+				}).select().single();
 
-				// Xử lý lỗi hoặc lưu chi tiết đơn hàng
-				if (error && !order) { 
-					// Fallback nếu lỗi insert có note (ít khi xảy ra)
-					await client.from('orders').insert({ staff_email: currentUserEmail, total_amount: t }); 
-				} else if (order) {
+				if (order) {
+					// 2. Lưu chi tiết đơn hàng (Giữ nguyên)
 					const items = cart.map(i => ({ 
-						order_id: order.id, 
-						product_name: i.name, 
-						quantity: i.quantity, 
-						price: i.finalPrice, 
-						total: i.quantity * i.finalPrice 
+						order_id: order.id, product_name: i.name, quantity: i.quantity, price: i.finalPrice, total: i.quantity * i.finalPrice 
 					}));
 					await client.from('order_items').insert(items);
+
+					// 3. --- MỚI: TRỪ TỒN KHO ---
+					// Chạy vòng lặp qua từng món trong giỏ để cập nhật
+					const updatePromises = cart.map(item => {
+						// Tìm sản phẩm gốc trong DB để lấy số lượng hiện tại
+						const originalProd = productsDB.find(p => p.id === item.id);
+						if (!originalProd) return null;
+
+						// Tính tồn kho mới (Không cho âm)
+						const newQty = Math.max(0, (originalProd.quantity || 0) - item.quantity);
+						
+						// Gửi lệnh update lên Supabase
+						return client.from('products').update({ quantity: newQty }).eq('id', item.id);
+					});
+
+					// Đợi tất cả lệnh update chạy xong
+					await Promise.all(updatePromises);
 				}
 
-				// 3. Dọn dẹp sau khi thành công
+				// 4. Dọn dẹp & Làm mới dữ liệu
 				cart = []; 
-				updateCartUI(); // Hàm này sẽ tự động xóa localStorage (theo code mình sửa ở bước trước)
+				updateCartUI(); 
 				document.getElementById('last-scanned-card').classList.add('hidden');
+				showAlert("Thành công", "Đơn hàng đã lưu & Đã trừ kho!", 'success');
 				
-				showAlert("Thành công", "Đơn hàng đã được lưu!", 'success');
+				// QUAN TRỌNG: Tải lại danh sách sản phẩm để cập nhật số lượng mới về máy
+				fetchProducts(); 
+				
 				backToScan();
 			});
 		}
@@ -944,34 +1068,188 @@
 
 			history.back();
 		}
-        function switchAdminTab(t) { 
-			if(t === 'products'){
-				document.getElementById('admin-products').classList.remove('hidden');
-				document.getElementById('admin-revenue').classList.add('hidden');
-				// (Giữ nguyên phần chỉnh style cho tab...)
-				document.getElementById('tab-products').className="flex-1 py-2.5 rounded-lg font-bold bg-blue-600 text-white shadow-sm";
-				document.getElementById('tab-revenue').className="flex-1 py-2.5 rounded-lg font-bold bg-white text-gray-500 border hover:bg-gray-50";
-			} else {
-				document.getElementById('admin-products').classList.add('hidden');
-				document.getElementById('admin-revenue').classList.remove('hidden');
-				document.getElementById('tab-revenue').className="flex-1 py-2.5 rounded-lg font-bold bg-blue-600 text-white shadow-sm";
-				document.getElementById('tab-products').className="flex-1 py-2.5 rounded-lg font-bold bg-white text-gray-500 border hover:bg-gray-50";
-				
+        function switchAdminTab(t) {
+			// --- PHẦN 1: XỬ LÝ GIAO DIỆN (UI) ---
+			
+			// 1. Ẩn nội dung của TẤT CẢ các tab
+			document.getElementById('admin-products').classList.add('hidden');
+			document.getElementById('admin-revenue').classList.add('hidden');
+			document.getElementById('admin-users').classList.add('hidden'); // Đảm bảo ID này tồn tại bên HTML
+			
+			// 2. Reset màu nút bấm về mặc định (Xám/Trắng) cho TẤT CẢ các nút
+			['products', 'revenue', 'users', 'system'].forEach(k => {
+				document.getElementById('admin-'+k).classList.add('hidden');
+				document.getElementById('tab-'+k).className = "flex-1 py-2.5 rounded-lg font-bold bg-white text-gray-500 border hover:bg-gray-50";
+			});
+
+			document.getElementById('admin-'+t).classList.remove('hidden');
+			document.getElementById('tab-'+t).className = "flex-1 py-2.5 rounded-lg font-bold bg-blue-600 text-white shadow-sm";
+
+			// 3. Hiện nội dung tab đang chọn
+			const targetContent = document.getElementById('admin-'+t);
+			if(targetContent) targetContent.classList.remove('hidden');
+
+			// 4. Tô màu xanh cho nút đang chọn
+			const targetBtn = document.getElementById('tab-'+t);
+			if(targetBtn) targetBtn.className = "flex-1 py-2.5 rounded-lg font-bold bg-blue-600 text-white shadow-sm";
+
+
+			// --- PHẦN 2: XỬ LÝ DỮ LIỆU (DATA) ---
+
+			// Logic riêng cho Tab Nhân viên
+			if (t === 'users') {
+				fetchUserList();
+			}
+			
+			// Logic riêng cho Tab Doanh thu
+			else if (t === 'revenue') {
 				loadRevenue(); // Tải tổng quan (Cards)
 				
-				// --- MỚI: Tự động chọn ngày hôm nay & tải chi tiết ---
-				const today = new Date().toISOString().split('T')[0];
-				document.getElementById('filter-start').value = today;
-				document.getElementById('filter-end').value = today;
-				
-				// Cập nhật cả cho phần export cũ (nếu bạn còn giữ hàm exportRevenueReport)
-				if(document.getElementById('report-start')) {
-					 document.getElementById('report-start').value = today;
-					 document.getElementById('report-end').value = today;
+				// Tự động chọn ngày hôm nay & tải chi tiết (Chỉ làm nếu ô input chưa có dữ liệu)
+				const dateInput = document.getElementById('filter-start');
+				if (dateInput && !dateInput.value) {
+					const today = new Date().toISOString().split('T')[0];
+					document.getElementById('filter-start').value = today;
+					document.getElementById('filter-end').value = today;
+					
+					// Cập nhật cả cho phần export cũ (nếu còn dùng)
+					if(document.getElementById('report-start')) {
+						 document.getElementById('report-start').value = today;
+						 document.getElementById('report-end').value = today;
+					}
 				}
 
 				viewRevenueDetail(); // Gọi hàm tải danh sách chi tiết
 			}
+			
+			else if (t === 'system') {
+				fetchSystemSettings();
+			}
+			
+			// Logic riêng cho Tab Hàng hóa (Nếu cần reload khi chuyển tab)
+			else if (t === 'products') {
+				// fetchProducts(); // Bật dòng này nếu muốn mỗi lần bấm vào tab Hàng hóa là tải lại danh sách
+			}
+		}
+		
+		// Tải danh sách User
+		async function fetchUserList() {
+			document.getElementById('user-list').innerHTML = '<div class="text-center py-4 text-gray-400">⏳ Đang tải...</div>';
+			
+			// Sắp xếp: Admin lên đầu, sau đó đến người mới online
+			const { data: users, error } = await client
+				.from('app_users')
+				.select('*')
+				.order('role', { ascending: true }) // 'admin' (a) đứng trước 'staff' (s)
+				.order('last_seen', { ascending: false });
+			
+			if (error) return showAlert("Lỗi", error.message, 'error');
+
+			document.getElementById('user-list').innerHTML = users.map(u => {
+				// 1. Tính trạng thái Online
+				const diffMin = (new Date() - new Date(u.last_seen)) / 60000;
+				const isOnline = diffMin < 2;
+				
+				const statusHtml = isOnline 
+					? `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold border border-green-200 inline-flex items-center gap-1 w-fit">
+						<span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Online
+					   </span>`
+					: `<span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded text-[10px] font-bold border inline-flex items-center w-fit">
+						Offline ${Math.round(diffMin)}p trước
+					   </span>`;
+
+				// 2. Nút Khóa / Mở khóa
+				const lockBtn = u.is_locked 
+					? `<button onclick="setUserLock('${u.email}', false)" class="bg-green-100 text-green-600 px-3 py-2 rounded font-bold text-xs border border-green-200">Mở</button>`
+					: `<button onclick="setUserLock('${u.email}', true)" class="bg-gray-100 text-gray-500 px-3 py-2 rounded font-bold text-xs border border-gray-200">Khóa</button>`;
+
+				// 3. --- MỚI: NÚT BỔ NHIỆM / HẠ CẤP ---
+				let roleBtn = "";
+				if (u.role === 'admin') {
+					roleBtn = `<button onclick="changeUserRole('${u.email}', 'staff')" class="bg-purple-100 text-purple-600 px-3 py-2 rounded font-bold text-xs border border-purple-200">⬇️ Hạ cấp</button>`;
+				} else {
+					roleBtn = `<button onclick="changeUserRole('${u.email}', 'admin')" class="bg-yellow-100 text-yellow-700 px-3 py-2 rounded font-bold text-xs border border-yellow-200">⭐ Bổ nhiệm</button>`;
+				}
+
+				// 4. Render giao diện
+				// Nếu là Admin thì viền màu Tím cho đẹp
+				const cardBorder = u.role === 'admin' ? "border-purple-300 ring-1 ring-purple-100" : "border-gray-200";
+				const bgAvatar = u.role === 'admin' ? "bg-purple-100 text-purple-600" : "bg-blue-50 text-blue-600";
+
+				return `
+				<div class="bg-white p-3 rounded-xl border ${cardBorder} shadow-sm flex flex-col gap-3 ${u.is_locked ? 'opacity-60 bg-gray-50' : ''}">
+					<div class="flex justify-between items-start">
+						<div class="flex items-center gap-3">
+							<div class="w-10 h-10 rounded-full ${bgAvatar} flex items-center justify-center font-bold text-lg border">
+								${u.email.charAt(0).toUpperCase()}
+							</div>
+							<div>
+								<div class="font-bold text-gray-800 text-sm flex items-center gap-1">
+									${u.email}
+									${u.role === 'admin' ? '<span class="text-[9px] bg-purple-600 text-white px-1.5 rounded-full">ADMIN</span>' : ''}
+								</div>
+								<div class="mt-1">${statusHtml}</div>
+							</div>
+						</div>
+					</div>
+					
+					<div class="flex gap-2 justify-end border-t pt-2 border-dashed">
+						${roleBtn}
+						${lockBtn}
+						<button onclick="kickUser('${u.email}')" class="bg-red-50 text-red-600 px-3 py-2 rounded font-bold text-xs border border-red-100">Kick ⚡</button>
+					</div>
+				</div>
+				`;
+			}).join('');
+		}
+
+		// --- HÀM BỔ NHIỆM / HẠ CẤP ---
+		async function changeUserRole(email, newRole) {
+			// 1. Chặn không cho tự thay đổi quyền của chính mình (tránh lỡ tay tự hạ cấp rồi mất quyền Admin)
+			if (email === currentUserEmail) {
+				return showAlert("Từ chối", "Bạn không thể tự thay đổi quyền của chính mình!", 'error');
+			}
+
+			// 2. Xác định nội dung thông báo
+			const title = newRole === 'admin' ? "Bổ nhiệm Quản lý" : "Hạ cấp Nhân viên";
+			const msg = newRole === 'admin' 
+				? `Bạn muốn thăng chức cho ${email} thành ADMIN? (Họ sẽ có toàn quyền quản lý).`
+				: `Bạn muốn hạ cấp ${email} xuống thành NHÂN VIÊN? (Họ sẽ mất quyền truy cập trang Quản lý).`;
+
+			// 3. Hỏi xác nhận
+			showAlert(title, msg, 'confirm', async () => {
+				// 4. Cập nhật vào Database
+				const { error } = await client.from('app_users').update({ role: newRole }).eq('email', email);
+				
+				if (error) {
+					showAlert("Lỗi", "Không thể cập nhật: " + error.message, 'error');
+				} else {
+					showAlert("Thành công", `Đã cập nhật quyền cho ${email}`, 'success');
+					fetchUserList(); // Tải lại danh sách để thấy thay đổi
+				}
+			});
+		}
+
+		// Hàm Khóa/Mở khóa
+		async function setUserLock(email, lockStatus) {
+			if (email === currentUserEmail) return showAlert("Lỗi", "Không thể tự khóa chính mình!", 'error');
+			
+			showAlert(lockStatus ? "Khóa TK" : "Mở khóa", `Bạn muốn ${lockStatus ? 'KHÓA' : 'MỞ KHÓA'} tài khoản ${email}?`, 'confirm', async () => {
+				await client.from('app_users').update({ is_locked: lockStatus }).eq('email', email);
+				fetchUserList();
+				showAlert("Thành công", "Đã cập nhật trạng thái.", 'success');
+			});
+		}
+
+		// Hàm Kick (Buộc đăng xuất)
+		async function kickUser(email) {
+			if (email === currentUserEmail) return showAlert("Lỗi", "Không thể tự kick chính mình!", 'error');
+
+			showAlert("Kích tài khoản", `Buộc tài khoản ${email} đăng xuất ngay lập tức?`, 'confirm', async () => {
+				await client.from('app_users').update({ force_logout: true }).eq('email', email);
+				fetchUserList();
+				showAlert("Đã Kick", "Người dùng sẽ bị văng ra trong vòng 30 giây.", 'success');
+			});
 		}
 		
 		// --- HÀM XEM CHI TIẾT DOANH SỐ (MỚI) ---
@@ -1138,29 +1416,63 @@
 		}
 		
         function renderProductList(search = "") {
-            document.getElementById('admin-product-list').innerHTML = productsDB
-                .filter(p=> p.name.toLowerCase().includes(search.toLowerCase()) || (p.item_code && p.item_code.toLowerCase().includes(search.toLowerCase())) || (p.barcode && p.barcode.includes(search)))
-                .map(p => {
-                    let priceDisplay = `<div class="text-xs font-bold text-blue-600 mt-1">${formatMoney(p.price)}</div>`;
-                    if(p.sale_price && p.sale_price < p.price) { priceDisplay = `<div class="mt-1"><span class="text-gray-400 line-through text-[10px] mr-1">${formatMoney(p.price)}</span><span class="text-red-600 font-bold text-xs">${formatMoney(p.sale_price)}</span></div>`; }
-                    const lockedClass = p.is_locked ? "locked-item" : ""; const lockIcon = p.is_locked ? "🔓" : "🔒"; const lockBtnColor = p.is_locked ? "bg-gray-500" : "bg-orange-500";
-                    return `<div class="bg-white p-3 rounded-lg border flex justify-between items-center shadow-sm ${lockedClass}">
-								<div class="flex items-center gap-3">
-									<img src="${p.image||PLACEHOLDER_IMG}" class="w-12 h-12 rounded bg-gray-100 object-cover">
-								<div>
-								<div class="font-bold text-gray-800 text-sm">${p.name} ${p.is_locked ? '<span class="text-[10px] text-red-500 bg-red-100 px-1 rounded">(Đã khóa)</span>' : ''}</div>
-								<div class="flex gap-2 text-[10px] mt-0.5">
+			document.getElementById('admin-product-list').innerHTML = productsDB
+				.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || 
+							 (p.item_code && p.item_code.toLowerCase().includes(search.toLowerCase())) || 
+							 (p.barcode && p.barcode.includes(search)))
+				.map(p => {
+					// Xử lý hiển thị giá
+					let priceDisplay = `<div class="text-xs font-bold text-blue-600 mt-1">${formatMoney(p.price)}</div>`;
+					if (p.sale_price && p.sale_price < p.price) {
+						priceDisplay = `<div class="mt-1">
+											<span class="text-gray-400 line-through text-[10px] mr-1">${formatMoney(p.price)}</span>
+											<span class="text-red-600 font-bold text-xs">${formatMoney(p.sale_price)}</span>
+										</div>`;
+					}
+
+					// Xử lý trạng thái khóa
+					const lockedClass = p.is_locked ? "locked-item" : "";
+					const lockIcon = p.is_locked ? "🔓" : "🔒";
+					const lockBtnColor = p.is_locked ? "bg-gray-500" : "bg-orange-500";
+
+					// --- HTML TRẢ VỀ (ĐÃ SỬA HÀNG DỌC) ---
+					return `
+					<div class="bg-white p-3 rounded-lg border flex justify-between items-center shadow-sm ${lockedClass}">
+						
+						<div class="flex items-center gap-3 flex-1">
+							<img src="${p.image || PLACEHOLDER_IMG}" class="w-12 h-12 rounded bg-gray-100 object-cover shrink-0">
+							<div>
+								<div class="font-bold text-gray-800 text-sm line-clamp-1">
+									${p.name} 
+									${p.is_locked ? '<span class="text-[10px] text-red-500 bg-red-100 px-1 rounded ml-1">(Đã khóa)</span>' : ''}
+								</div>
+								
+								<div class="flex flex-wrap gap-1 text-[10px] mt-1">
 									<span class="bg-gray-100 px-1 rounded text-gray-500 border">Mã: ${p.barcode || '---'}</span>
 									<span class="bg-gray-100 px-1 rounded text-gray-500 border">Item: ${p.item_code || '---'}</span>
 									<span class="bg-gray-100 px-1 rounded text-gray-500 border">ĐVT: ${p.unit || '---'}</span>
-									</div>${priceDisplay}</div></div><div class="flex gap-2">
-										<button onclick="toggleLock(${p.id}, ${p.is_locked})" class="${lockBtnColor} text-white p-2 rounded w-8 h-8 flex items-center justify-center shadow-sm">${lockIcon}</button>
-										<button onclick="openProductModal(${p.id})" class="text-blue-600 bg-blue-50 p-2 rounded w-8 h-8 flex items-center justify-center">✏️</button>
-										<button onclick="deleteProduct(${p.id})" class="text-red-600 bg-red-50 p-2 rounded w-8 h-8 flex items-center justify-center">🗑</button>
-									</div>
-								</div>`
-                }).join('');
-        }
+									<span class="bg-purple-100 text-purple-700 px-1 rounded font-bold border border-purple-200">Kho: ${p.quantity || 0}</span>
+								</div>
+								
+								${priceDisplay}
+							</div>
+						</div>
+
+						<div class="flex flex-col gap-2 ml-3 shrink-0 py-1">
+							<button onclick="toggleLock(${p.id}, ${p.is_locked})" class="${lockBtnColor} text-white w-9 h-9 rounded-lg flex items-center justify-center shadow-sm transition active:scale-90">
+								${lockIcon}
+							</button>
+							<button onclick="openProductModal(${p.id})" class="text-blue-600 bg-blue-50 border border-blue-100 w-9 h-9 rounded-lg flex items-center justify-center transition active:scale-90">
+								✏️
+							</button>
+							<button onclick="deleteProduct(${p.id})" class="text-red-600 bg-red-50 border border-red-100 w-9 h-9 rounded-lg flex items-center justify-center transition active:scale-90">
+								🗑
+							</button>
+						</div>
+
+					</div>`;
+				}).join('');
+		}
         async function toggleLock(id, status) {
             showAlert(status ? "Mở khóa" : "Khóa sản phẩm", status ? "Bạn muốn mở bán lại?" : "Tạm ngưng bán món này?", 'confirm', async () => {
                 await client.from('products').update({ is_locked: !status }).eq('id', id); fetchProducts();
@@ -1171,21 +1483,64 @@
                 await client.from('products').delete().eq('id', id); fetchProducts();
             });
         }
-        function downloadTemplate() { const data = [["Mã vạch", "Mã Item", "Tên sản phẩm", "Giá bán", "Giá khuyến mãi", "Đơn vị", "Link Ảnh"], ["893...", "NC01", "Ví dụ: Nước ngọt", "10000", "8000", "Chai", ""]]; const wb = XLSX.utils.book_new(); const ws = XLSX.utils.aoa_to_sheet(data); XLSX.utils.book_append_sheet(wb, ws, "Mau_Nhap_Hang"); XLSX.writeFile(wb, "Mau_Nhap_Hang_POS.xlsx"); }
+        function downloadTemplate() { 
+			// Thêm cột "Tồn kho" vào tiêu đề và dữ liệu mẫu
+			const data = [
+				["Mã vạch", "Mã Item", "Tên sản phẩm", "Giá bán", "Giá khuyến mãi", "Đơn vị", "Tồn kho", "Link Ảnh"], 
+				["893...", "NC01", "Ví dụ: Nước ngọt", "10000", "8000", "Chai", "100", ""]
+			]; 
+			
+			const wb = XLSX.utils.book_new(); 
+			const ws = XLSX.utils.aoa_to_sheet(data); 
+			
+			// Chỉnh độ rộng cột cho dễ nhìn (Tùy chọn)
+			ws['!cols'] = [{wch:15}, {wch:10}, {wch:30}, {wch:10}, {wch:10}, {wch:10}, {wch:10}, {wch:20}];
+
+			XLSX.utils.book_append_sheet(wb, ws, "Mau_Nhap_Hang"); 
+			XLSX.writeFile(wb, "Mau_Nhap_Hang_POS.xlsx"); 
+		}
         async function handleExcelUpload(e) {
-            const file = e.target.files[0]; if(!file) return;
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array'}); const sheetName = workbook.SheetNames[0]; const worksheet = workbook.Sheets[sheetName]; const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                if(jsonData.length === 0) return showAlert("Lỗi", "File không có dữ liệu!", 'error');
-                const productsToInsert = jsonData.map(row => ({ name: row["Tên sản phẩm"]||"Mới", price: parseInt(row["Giá bán"])||0, sale_price: row["Giá khuyến mãi"]?parseInt(row["Giá khuyến mãi"]):null, barcode: row["Mã vạch"]?String(row["Mã vạch"]):null, item_code: row["Mã Item"]?String(row["Mã Item"]):null, unit: row["Đơn vị"]||"Cái", image: row["Link Ảnh"]||"" }));
-                showAlert("Nhập Excel", `Tìm thấy ${productsToInsert.length} sản phẩm. Tiến hành nhập?`, 'confirm', async () => {
-                    const { error } = await client.from('products').insert(productsToInsert);
-                    if(error) showAlert("Lỗi", error.message, 'error'); else { showAlert("Thành công", "Đã nhập hàng xong!", 'success'); fetchProducts(); }
-                    document.getElementById('excel-upload').value = "";
-                });
-            }; reader.readAsArrayBuffer(file);
-        }
+			const file = e.target.files[0]; 
+			if(!file) return;
+
+			const reader = new FileReader();
+			reader.onload = async function(e) {
+				const data = new Uint8Array(e.target.result); 
+				const workbook = XLSX.read(data, {type: 'array'}); 
+				const sheetName = workbook.SheetNames[0]; 
+				const worksheet = workbook.Sheets[sheetName]; 
+				const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+				if(jsonData.length === 0) return showAlert("Lỗi", "File không có dữ liệu!", 'error');
+
+				// --- CẬP NHẬT: Thêm trường quantity (Tồn kho) ---
+				const productsToInsert = jsonData.map(row => ({ 
+					name: row["Tên sản phẩm"] || "Mới", 
+					price: parseInt(row["Giá bán"]) || 0, 
+					sale_price: row["Giá khuyến mãi"] ? parseInt(row["Giá khuyến mãi"]) : null, 
+					barcode: row["Mã vạch"] ? String(row["Mã vạch"]) : null, 
+					item_code: row["Mã Item"] ? String(row["Mã Item"]) : null, 
+					unit: row["Đơn vị"] || "Cái", 
+					image: row["Link Ảnh"] || "",
+					
+					// Đọc cột "Tồn kho", nếu không có hoặc để trống thì mặc định là 0
+					quantity: parseInt(row["Tồn kho"]) || 0 
+				}));
+
+				showAlert("Nhập Excel", `Tìm thấy ${productsToInsert.length} sản phẩm. Tiến hành nhập?`, 'confirm', async () => {
+					const { error } = await client.from('products').insert(productsToInsert);
+					
+					if(error) {
+						showAlert("Lỗi", error.message, 'error'); 
+					} else { 
+						showAlert("Thành công", "Đã nhập hàng và kho thành công!", 'success'); 
+						fetchProducts(); 
+					}
+					document.getElementById('excel-upload').value = "";
+				});
+			}; 
+			reader.readAsArrayBuffer(file);
+		}
 
 		async function openHistory() {
             document.getElementById('history-modal').classList.remove('hidden');
@@ -1225,14 +1580,47 @@
         // --- PRODUCT MODAL ---
         function openProductModal(id = null) {
             document.getElementById('product-modal').classList.remove('hidden');
-            if(id) { const p = productsDB.find(x=>x.id==id); document.getElementById('prod-id').value=p.id; document.getElementById('prod-name').value=p.name; document.getElementById('prod-barcode').value=p.barcode||""; document.getElementById('prod-itemcode').value=p.item_code||""; document.getElementById('prod-price').value=p.price; document.getElementById('prod-image').value=p.image||""; document.getElementById('prod-unit').value=p.unit||""; document.getElementById('prod-sale').value=p.sale_price||""; } 
-            else { document.getElementById('prod-id').value=""; document.getElementById('prod-name').value=""; document.getElementById('prod-barcode').value=""; document.getElementById('prod-itemcode').value=""; document.getElementById('prod-price').value=""; document.getElementById('prod-image').value=""; document.getElementById('prod-unit').value=""; document.getElementById('prod-sale').value=""; }
+            if(id) { 
+				const p = productsDB.find(x=>x.id==id);
+				document.getElementById('prod-id').value=p.id; 
+				document.getElementById('prod-name').value=p.name; 
+				document.getElementById('prod-barcode').value=p.barcode||""; 
+				document.getElementById('prod-itemcode').value=p.item_code||""; 
+				document.getElementById('prod-price').value=p.price; 
+				document.getElementById('prod-image').value=p.image||""; 
+				document.getElementById('prod-unit').value=p.unit||""; 
+				document.getElementById('prod-sale').value=p.sale_price||""; 
+				document.getElementById('prod-quantity').value = p.quantity || 0;
+			} 
+            else { 
+				document.getElementById('prod-id').value=""; 
+				document.getElementById('prod-name').value=""; 
+				document.getElementById('prod-barcode').value=""; 
+				document.getElementById('prod-itemcode').value=""; 
+				document.getElementById('prod-price').value=""; 
+				document.getElementById('prod-image').value=""; 
+				document.getElementById('prod-unit').value=""; 
+				document.getElementById('prod-sale').value="";
+				document.getElementById('prod-quantity').value="0";
+			}
         }
         async function saveProduct() {
             const id = document.getElementById('prod-id').value;
-            const payload = { name: document.getElementById('prod-name').value, price: parseInt(document.getElementById('prod-price').value), sale_price: parseInt(document.getElementById('prod-sale').value) || null, barcode: document.getElementById('prod-barcode').value, item_code: document.getElementById('prod-itemcode').value, unit: document.getElementById('prod-unit').value, image: document.getElementById('prod-image').value };
-            if(id) await client.from('products').update(payload).eq('id', id); else await client.from('products').insert(payload);
-            document.getElementById('product-modal').classList.add('hidden'); fetchProducts(); showAlert("Đã lưu", "Cập nhật sản phẩm thành công", 'success');
+            const payload = { 
+				name: document.getElementById('prod-name').value, 
+				price: parseInt(document.getElementById('prod-price').value), 
+				sale_price: parseInt(document.getElementById('prod-sale').value) || null, 
+				barcode: document.getElementById('prod-barcode').value, 
+				item_code: document.getElementById('prod-itemcode').value, 
+				unit: document.getElementById('prod-unit').value, 
+				image: document.getElementById('prod-image').value,
+				quantity: parseInt(document.getElementById('prod-quantity').value) || 0 };
+            if(id) await client.from('products').update(payload).eq('id', id); 
+			else await client.from('products').insert(payload);
+			
+            document.getElementById('product-modal').classList.add('hidden'); 
+			fetchProducts(); 
+			showAlert("Đã lưu", "Cập nhật sản phẩm thành công", 'success');
         }
 
         // --- GENERAL ---
@@ -1331,6 +1719,107 @@
 				if (html5QrcodeScanner) html5QrcodeScanner.resume(); // Bật lại camera
 			}
 		});
+		
+		// --- LOGIC HEARTBEAT (BÁO ONLINE & CHECK KICK) ---
+		let heartbeatInterval = null;
+
+		function startHeartbeat() {
+			if (heartbeatInterval) clearInterval(heartbeatInterval);
+			
+			// Gọi ngay lập tức lần đầu
+			pingServer();
+
+			// Lặp lại mỗi 30 giây
+			heartbeatInterval = setInterval(pingServer, 30000); 
+		}
+
+		async function pingServer() {
+			if (!currentUserEmail) return;
+
+			try {
+				// 1. Kiểm tra trạng thái bản thân
+				const { data: user, error } = await client
+					.from('app_users')
+					.select('*')
+					.eq('email', currentUserEmail)
+					.maybeSingle(); // Chuẩn: dùng maybeSingle để tránh lỗi nếu chưa có user
+
+				// Nếu chưa có -> Tự động thêm vào
+				if (!user && !error) {
+					await client.from('app_users').insert({ 
+						email: currentUserEmail, 
+						role: currentUserRole, // Lưu ý: Đảm bảo biến này đang chứa đúng role hiện tại
+						last_seen: new Date() 
+					});
+				}
+				
+				if (currentUserRole !== 'admin') {
+					const { data: settings } = await client.from('app_settings').select('maintenance_mode, maintenance_message').eq('id', 1).single();
+					
+					if (settings && settings.maintenance_mode) {
+						showAlert("HỆ THỐNG BẢO TRÌ", settings.maintenance_message, "error", () => {
+							forceLogout();
+						});
+						return; // Dừng ngay
+					}
+				}
+				
+				// Nếu đã có -> Kiểm tra trạng thái
+				if (user) {
+					// A. Nếu bị KHÓA hoặc bị KICK
+					if (user.is_locked || user.force_logout) {
+						
+						// Xử lý trường hợp Kick (Reset cờ trước khi đá)
+						if (user.force_logout) {
+							await client.from('app_users').update({ force_logout: false }).eq('email', currentUserEmail);
+							
+							// SỬA: Đưa forceLogout vào làm tham số thứ 4 (callback)
+							showAlert("CẢNH BÁO", '⚠️ BẠN ĐÃ BỊ BUỘC ĐĂNG XUẤT TỪ QUẢN TRỊ VIÊN.', "error", () => {
+								forceLogout(); 
+							});
+						} else {
+							// Trường hợp bị Khóa
+							showAlert("THÔNG BÁO", '⛔ TÀI KHOẢN CỦA BẠN ĐÃ BỊ KHÓA!', "error", () => {
+								forceLogout();
+							});
+						}
+						
+						// Ngắt hàm luôn để không chạy cập nhật last_seen bên dưới
+						return; 
+					}
+
+					// B. Nếu bình thường -> Cập nhật 'last_seen'
+					await client.from('app_users').update({ last_seen: new Date() }).eq('email', currentUserEmail);
+				}
+			} catch (e) { 
+				// Lỗi mạng hoặc lỗi server thì bỏ qua, không cần làm phiền user
+				console.log("Lỗi Heartbeat:", e); 
+			}
+		}
+		
+		// --- SYSTEM SETTINGS ---
+		async function fetchSystemSettings() {
+			const { data, error } = await client.from('app_settings').select('*').eq('id', 1).single();
+			if (data) {
+				document.getElementById('sys-maintenance-toggle').checked = data.maintenance_mode;
+				document.getElementById('sys-message').value = data.maintenance_message;
+			}
+		}
+
+		async function saveSystemSettings() {
+			const mode = document.getElementById('sys-maintenance-toggle').checked;
+			const msg = document.getElementById('sys-message').value.trim() || "Hệ thống đang bảo trì.";
+
+			showAlert("Lưu cài đặt", `Bạn muốn ${mode ? 'BẬT' : 'TẮT'} chế độ bảo trì?`, 'confirm', async () => {
+				const { error } = await client.from('app_settings').update({
+					maintenance_mode: mode,
+					maintenance_message: msg
+				}).eq('id', 1);
+
+				if (error) showAlert("Lỗi", error.message, 'error');
+				else showAlert("Thành công", "Đã cập nhật cấu hình hệ thống.", 'success');
+			});
+		}
     </script>
 	<script>
 		// Đăng ký PWA Service Worker
