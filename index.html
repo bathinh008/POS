@@ -13,7 +13,7 @@
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 	
-	<script src="https://unpkg.com/@zxing/library@latest"></script>
+	<!--<script src="https://unpkg.com/@zxing/library@latest"></script>-->
 	<script src="https://cdn.jsdelivr.net/npm/easyqrcodejs@4.5.0/dist/easy.qrcode.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -106,7 +106,7 @@
 			<p class="text-white font-bold mb-4 text-lg">Đưa mã QR vào khung</p>
 			
 			<div class="relative w-80 h-80 border-4 border-blue-500 rounded-2xl overflow-hidden shadow-2xl bg-black">
-				<div id="reader" class="w-full h-full"></div>
+				<div id="reader-login" class="w-full h-full"></div>
 			</div>
 
 			<button onclick="stopLoginScanner()" class="mt-8 bg-white text-red-600 px-6 py-2 rounded-full font-bold shadow-lg">Đóng Camera</button>
@@ -772,7 +772,7 @@
             const actionsEl = document.getElementById('alert-actions');
             
             document.getElementById('alert-title').innerText = title;
-            document.getElementById('alert-msg').innerText = msg;
+            document.getElementById('alert-msg').innerHTML = msg;
             modalCallback = callback;
 
             // Cấu hình giao diện theo loại thông báo
@@ -2045,42 +2045,30 @@
 		let html5QrCode; 
 
 		function startLoginScanner() {
-			// 1. Hiển thị khung Overlay
 			const overlay = document.getElementById('login-scanner-overlay');
 			if (overlay) overlay.classList.remove('hidden');
 
-			// 2. Nếu chưa khởi tạo thì tạo mới
-			// 'reader' là id của thẻ div trong HTML ở Bước 1
 			if (!html5QrCode) {
-				html5QrCode = new Html5Qrcode("reader");
+				// --- SỬA ID Ở ĐÂY CHO KHỚP VỚI HTML ---
+				html5QrCode = new Html5Qrcode("reader-login"); 
 			}
 
-			// 3. Cấu hình Camera (QUAN TRỌNG)
-			const config = { 
-				fps: 10,             // Số khung hình/giây (10 là mượt)
-				qrbox: 250,          // Kích thước vùng quét xanh xanh (250px)
-				aspectRatio: 1.0     // Tỉ lệ khung hình vuông
-			};
+			const config = { fps: 10, qrbox: 250, aspectRatio: 1.0 };
 
-			// 4. Bắt đầu quét
 			html5QrCode.start(
-				{ facingMode: "environment" }, // Ưu tiên Camera sau
+				{ facingMode: "environment" },
 				config,
-				(decodedText, decodedResult) => {
-					// === KHI QUÉT THÀNH CÔNG ===
-					console.log(`Đã quét được: ${decodedText}`);
+				(decodedText) => {
+					// Khi quét thành công
+					console.log("QR Login Scan:", decodedText);
 					handleLoginQRResult(decodedText);
 				},
-				(errorMessage) => {
-					// Đang quét mà chưa thấy mã... (Kệ nó, không cần log lỗi này)
-				}
+				() => {} // Bỏ qua lỗi đang quét
 			).catch(err => {
-				// === LỖI KHÔNG MỞ ĐƯỢC CAMERA ===
 				console.error(err);
-				
-				// Fallback: Nếu lỗi do camera sau, thử mở camera bất kỳ
-				alert("Không thể mở Camera sau. Đang thử camera trước...");
-				html5QrCode.start({ facingMode: "user" }, config, (text) => handleLoginQRResult(text));
+				alert("Không mở được camera sau. Đang thử camera trước...");
+				// Fallback sang camera trước nếu lỗi
+				html5QrCode.start({ facingMode: "user" }, config, (t) => handleLoginQRResult(t));
 			});
 		}
 
@@ -2100,28 +2088,32 @@
 
 		function handleLoginQRResult(text) {
 			try {
-				// 1. Giải mã chuỗi JSON từ QR
-				// Mẫu: {"action":"login", "email":"admin@gmail.com", "pass":"123456"}
 				const data = JSON.parse(text);
 
-				// 2. Kiểm tra dữ liệu hợp lệ
 				if (data.action === 'login' && data.email && data.pass) {
-					// Rung điện thoại báo hiệu
+					// 1. Báo rung
 					if(navigator.vibrate) navigator.vibrate(200);
 					
-					// Dừng camera ngay
+					// 2. Tắt camera ngay
 					stopLoginScanner();
 
-					// 3. Điền thông tin vào ô nhập liệu
+					// 3. Điền thông tin
 					document.getElementById('email').value = data.email;
 					document.getElementById('password').value = data.pass;
+					
+					// 4. Hiện thông báo nhỏ (UX)
+					document.getElementById('login-msg').innerText = "🔄 Đang đăng nhập...";
 
-					// 4. Tự động bấm nút Đăng nhập
-					handleLogin();
-				} 
+					// 5. Gọi hàm đăng nhập (Thêm delay nhỏ để tắt camera xong hẳn mới login)
+					setTimeout(() => {
+						handleLogin();
+					}, 300);
+				} else {
+					// Nếu quét nhầm mã không phải mã login
+					alert("Mã QR không hợp lệ! Vui lòng quét mã thẻ nhân viên.");
+				}
 			} catch (e) {
-				// Quét trúng mã không phải JSON hoặc mã vạch sản phẩm -> Bỏ qua, không làm gì
-				console.log("Mã không hợp lệ:", text);
+				console.log("Lỗi đọc mã:", text);
 			}
 		}
 		
