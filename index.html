@@ -61,6 +61,30 @@
 		#custom-alert {
 			z-index: 2147483647 !important; /* Số lớn nhất mà trình duyệt hiểu được */
 		}
+		
+		/* --- HIỆU ỨNG GIỎ HÀNG CAO CẤP --- */
+
+		/* 1. Nút rung nhẹ khi chờ thanh toán */
+		@keyframes soft-pulse {
+			0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+			70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+			100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+		}
+
+		/* 2. Class kích hoạt hiệu ứng rung */
+		.cart-active-pulse {
+			animation: soft-pulse 2s infinite;
+		}
+
+		/* 3. Hiệu ứng số nảy lên (Pop) khi thêm hàng */
+		.badge-pop {
+			animation: popInBadge 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+		}
+		@keyframes popInBadge {
+			0% { transform: scale(0.8); }
+			50% { transform: scale(1.5); }
+			100% { transform: scale(1); }
+		}
     </style>
 </head>
 
@@ -79,11 +103,27 @@
 			<div class="space-y-4">
 				<div>
 					<label class="block text-xs font-bold text-gray-500 mb-1">Email</label>
-					<input type="email" id="email" class="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="name@example.com">
+					<!--<input type="email" id="email" class="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="name@example.com">-->
+					<input 
+						type="email" 
+						id="email" 
+						class="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+						placeholder="name@example.com"
+						enterkeyhint="next"
+						onkeyup="if(event.key === 'Enter') document.getElementById('password').focus()"
+					>
 				</div>
 				<div>
 					<label class="block text-xs font-bold text-gray-500 mb-1">Mật khẩu</label>
-					<input type="password" id="password" class="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="••••••••">
+					<!--<input type="password" id="password" class="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="••••••••">-->
+					<input 
+						type="password" 
+						id="password" 
+						class="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+						placeholder="••••••••"
+						enterkeyhint="go"
+						onkeyup="handleLoginKey(event)"
+					>
 				</div>
 				
 				<div id="login-msg" class="text-center text-red-500 text-xs font-bold min-h-[20px]"></div>
@@ -181,19 +221,26 @@
     
 			<div id="sales-panel" class="block">
 				<div class="p-4 pb-2">
-					<div class="mb-3 relative group">
-						<input 
-							type="tel" 
-							id="manual-input" 
-							placeholder="Nhập mã hoặc số lượng (vd: 5*)" 
-							class="w-full bg-gray-100 p-3.5 pl-11 rounded-2xl text-lg font-semibold outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all shadow-inner" 
-							onkeyup="handleManualInput(event)"
-							enterkeyhint="search"
-							autocomplete="off"
-							autocorrect="off"
-							autocapitalize="off"
-						>
-						<span class="absolute left-4 top-4 text-gray-400">⌨️</span>
+					<div class="mb-3 flex gap-2 items-center">
+    
+						<button onclick="openScanSettings()" class="w-12 h-12 rounded-xl bg-gray-200 text-gray-600 flex items-center justify-center text-xl shadow-sm active:scale-95 transition-transform shrink-0">
+							⚙️
+						</button>
+
+						<div class="relative flex-1 group">
+							<input 
+								type="tel" 
+								id="manual-input" 
+								placeholder="Nhập mã hoặc số lượng (vd: 5*)" 
+								class="w-full bg-gray-100 p-3.5 pl-10 rounded-xl text-lg font-semibold outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all shadow-inner" 
+								onkeyup="handleManualInput(event)"
+								enterkeyhint="search"
+								autocomplete="off"
+							>
+							<span class="absolute left-3 top-4 text-gray-400">⌨️</span>
+						</div>
+
+						<div id="scan-buttons-container" class="flex gap-1 shrink-0"></div>
 					</div>
 					
 					<div id="last-scanned-card" class="bg-emerald-50 p-3 rounded-2xl border border-emerald-100 flex items-center justify-between hidden scan-success mb-3 shadow-sm">
@@ -212,9 +259,9 @@
 				</div>
 
 				<div class="px-4 pb-4 pt-2">
-					<button onclick="goToPayment()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold text-xl shadow-lg shadow-blue-200 flex justify-between items-center active:scale-[0.98] transition-transform group">
+					<button id="btn-cart-payment" onclick="goToPayment()" class="w-full bg-gray-200 text-gray-400 p-4 rounded-2xl font-bold text-xl shadow-none flex justify-between items-center active:scale-[0.98] transition-all duration-300 group">
 						<div class="flex items-center gap-3">
-							<span class="bg-white/20 px-3 py-1 rounded-lg text-sm backdrop-blur-md" id="quick-count">0</span>
+							<span class="bg-black/10 px-3 py-1 rounded-lg text-sm backdrop-blur-md" id="quick-count">0</span>
 							<span class="text-sm font-normal opacity-90">Giỏ hàng</span>
 						</div>
 						<span id="quick-total">0đ &rarr;</span>
@@ -407,7 +454,11 @@
 				<span id="change-amount" class="text-2xl font-bold text-orange-600">0đ</span>
 			</div>
 			
-			<button onclick="processPayment()" id="btn-confirm-pay" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold text-lg shadow-lg active:scale-[0.98] transition-transform">XÁC NHẬN THANH TOÁN</button>
+			<button onclick="processPayment()" 
+				id="btn-confirm-pay" 
+				class="w-full bg-gray-200 text-gray-400 p-4 rounded-xl font-bold text-lg shadow-none transition-all duration-300 flex justify-center items-center gap-2 group">
+				XÁC NHẬN THANH TOÁN
+			</button>
 		</div>
     </div>
 
@@ -553,13 +604,75 @@
 			<h3 class="font-bold text-lg text-gray-800 mb-2">🔒 Xác thực Admin</h3>
 			<p class="text-sm text-gray-500 mb-4">Vui lòng nhập mật khẩu của nhân viên để tạo mã QR đăng nhập.</p>
 			
-			<input type="password" id="qr-password-input" 
+			<!--<input type="password" id="qr-password-input" 
 				   class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none mb-4 select-text text-gray-900 bg-white" 
-				   placeholder="Nhập mật khẩu..." autocomplete="off">
-
+				   placeholder="Nhập mật khẩu..." autocomplete="off">-->
+			<input 
+				type="password" 
+				id="qr-password-input" 
+				class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none mb-4 select-text text-gray-900 bg-white" 
+				placeholder="Nhập mật khẩu..." 
+				autocomplete="off"
+				enterkeyhint="go" 
+			>
 			<div class="flex gap-3 justify-end">
 				<button onclick="closePassModal()" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-gray-200">Hủy</button>
 				<button onclick="submitQRPassword()" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold shadow-md hover:bg-blue-700">Tạo Mã</button>
+			</div>
+		</div>
+	</div>
+
+	<div id="scan-settings-modal" class="hidden fixed inset-0 z-[80] bg-black bg-opacity-60 flex items-center justify-center p-4 backdrop-blur-sm">
+		<div class="bg-white rounded-2xl shadow-2xl p-5 w-full max-w-sm animate-popIn">
+			<div class="flex justify-between items-center mb-4 border-b pb-2">
+				<h3 class="font-bold text-lg text-gray-800">⚙️ Cài đặt Nút Quét</h3>
+				<button onclick="document.getElementById('scan-settings-modal').classList.add('hidden')" class="text-gray-400 text-xl">✕</button>
+			</div>
+
+			<div class="space-y-3">
+				
+				<label class="flex items-center justify-between p-3 border rounded-xl cursor-pointer hover:bg-gray-50 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+					<div class="flex items-center gap-3">
+						<span class="text-xl">🔳</span>
+						<div>
+							<div class="font-bold text-gray-800 text-sm">Nút to giữa màn hình</div>
+							<div class="text-[10px] text-gray-500">Giao diện gốc (Không có nút nhỏ)</div>
+						</div>
+					</div>
+					<input type="radio" name="scan_mode" value="default" class="w-5 h-5 text-blue-600" onchange="saveScanMode('default')">
+				</label>
+
+				<label class="flex items-center justify-between p-3 border rounded-xl cursor-pointer hover:bg-gray-50 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+					<div class="flex items-center gap-3">
+						<span class="text-blue-600">
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+							  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+							  <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75zM16.5 19.5h.75v.75h-.75v-.75z" />
+							</svg>
+						</span>
+						
+						<div>
+							<div class="font-bold text-gray-800 text-sm">Nút nhỏ: Tắt / Mở</div>
+							<div class="text-[10px] text-gray-500">Nút nhỏ cạnh ô nhập. Ẩn nút to.</div>
+						</div>
+					</div>
+					<input type="radio" name="scan_mode" value="toggle" class="w-5 h-5 text-blue-600" onchange="saveScanMode('toggle')">
+				</label>
+
+				<label class="flex items-center justify-between p-3 border rounded-xl cursor-pointer hover:bg-gray-50 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+					<div class="flex items-center gap-3">
+						<span class="text-xl">👆</span>
+						<div>
+							<div class="font-bold text-gray-800 text-sm">Nút nhỏ: Giữ để quét</div>
+							<div class="text-[10px] text-gray-500">Giữ tay camera bật. Ẩn nút to.</div>
+						</div>
+					</div>
+					<input type="radio" name="scan_mode" value="hold" class="w-5 h-5 text-blue-600" onchange="saveScanMode('hold')">
+				</label>
+			</div>
+
+			<div class="mt-6">
+				<button onclick="document.getElementById('scan-settings-modal').classList.add('hidden')" class="w-full bg-gray-100 text-gray-600 py-3 rounded-xl font-bold">Đóng</button>
 			</div>
 		</div>
 	</div>
@@ -915,8 +1028,23 @@
 		
         async function stopScanner() {
             if (html5QrcodeScanner) {
-                try { await html5QrcodeScanner.stop(); html5QrcodeScanner = null; document.getElementById('camera-placeholder').classList.remove('hidden'); document.getElementById('btn-stop-cam').classList.add('hidden'); } 
-                catch (err) { console.log(err); }
+                try { 
+					await html5QrcodeScanner.stop(); 
+					html5QrcodeScanner = null;
+					
+					if (currentScanMode === 'default') {
+						document.getElementById('camera-placeholder').classList.remove('hidden'); 
+					} else {
+						// Nếu đang ở chế độ nút nhỏ thì vẫn ẩn nút to
+						document.getElementById('camera-placeholder').classList.add('hidden');
+					}
+					
+					//document.getElementById('camera-placeholder').classList.remove('hidden'); 
+					document.getElementById('btn-stop-cam').classList.add('hidden'); 
+				} 
+                catch (err) { 
+					console.log(err); 
+				}
             }
         }
 
@@ -986,11 +1114,58 @@
 		}
 
         function updateCartUI() {
-            document.getElementById('quick-count').innerText = cart.reduce((s,i)=>s+i.quantity,0);
-            document.getElementById('quick-total').innerText = formatMoney(cart.reduce((s,i)=>s+(i.quantity*i.finalPrice),0)) + " ->";
+			// 1. Tính toán
+			const totalQty = cart.reduce((s, i) => s + i.quantity, 0);
+			const totalMoney = cart.reduce((s, i) => s + (i.quantity * i.finalPrice), 0);
+
+			// 2. Lấy các phần tử
+			const btn = document.getElementById('btn-cart-payment');
+			const badge = document.getElementById('quick-count');
+			const totalText = document.getElementById('quick-total');
+
+			// 3. Cập nhật Text
+			// Logic nảy số: Xóa class cũ -> Đợi xíu -> Thêm lại class để nó chạy lại animation
+			badge.classList.remove('badge-pop');
+			void badge.offsetWidth; // Hack: Ép trình duyệt render lại để reset animation
+			badge.classList.add('badge-pop');
+			
+			badge.innerText = totalQty;
+			totalText.innerText = formatMoney(totalMoney) + " ➜";
 			
 			localStorage.setItem('pos_current_cart', JSON.stringify(cart));
-        }
+
+			// 4. --- LOGIC GIAO DIỆN CAO CẤP ---
+			if (btn && badge) {
+				if (totalQty > 0) {
+					// === CÓ HÀNG: MÀU GRADIENT & PHÁT SÁNG ===
+					
+					// Xóa style xám
+					btn.classList.remove('bg-gray-200', 'text-gray-400', 'shadow-none', 'pointer-events-none');
+					
+					// Thêm Gradient + Bóng + Hiệu ứng nhịp đập (pulse)
+					// bg-gradient-to-r from-blue-600 to-blue-500: Tạo màu chuyển sắc
+					btn.classList.add(
+						'bg-gradient-to-r', 'from-blue-600', 'to-indigo-600', // Màu chuyển sắc
+						'text-white', 
+						'shadow-lg', 'shadow-blue-500/50', // Bóng đổ màu xanh mờ
+						'cursor-pointer',
+						'cart-active-pulse' // Class tự tạo ở Bước 1
+					);
+					
+					// Badge màu trắng mờ sang trọng
+					badge.className = "bg-white/20 px-3 py-1 rounded-lg text-sm font-bold backdrop-blur-md border border-white/20 badge-pop";
+
+				} else {
+					// === GIỎ TRỐNG: XÁM CHÌM ===
+					
+					// Reset toàn bộ class xịn
+					btn.className = "w-full bg-gray-100 text-gray-400 p-4 rounded-2xl font-bold text-xl shadow-inner flex justify-between items-center transition-all duration-300 pointer-events-none border border-gray-200";
+					
+					// Badge màu tối
+					badge.className = "bg-gray-200 px-3 py-1 rounded-lg text-sm text-gray-400";
+				}
+			}
+		}
 
         // --- PAYMENT ---
         function goToPayment() {
@@ -1067,15 +1242,63 @@
 		}
 
         function calculateChange() {
-            const total = cart.reduce((s,i)=>s+(i.quantity*i.finalPrice),0);
-            const received = parseInt(document.getElementById('money-received').value) || 0;
-            const change = received - total;
-            const el = document.getElementById('change-amount');
-            el.innerText = change < 0 ? "Thiếu " + formatMoney(Math.abs(change)) : formatMoney(change);
-            el.className = change < 0 ? "text-2xl font-bold text-red-600" : "text-2xl font-bold text-green-600";
-        }
-        function addMoney(n) { const el=document.getElementById('money-received'); el.value=(parseInt(el.value)||0)+n; calculateChange(); }
-        function setExactMoney() { document.getElementById('money-received').value = cart.reduce((s,i)=>s+(i.quantity*i.finalPrice),0); calculateChange(); }
+			// 1. Tính toán
+			const total = cart.reduce((s, i) => s + (i.quantity * i.finalPrice), 0);
+			const received = parseInt(document.getElementById('money-received').value) || 0;
+			const change = received - total;
+
+			// 2. Hiển thị text tiền thừa/thiếu (Giữ nguyên logic cũ)
+			const el = document.getElementById('change-amount');
+			el.innerText = change < 0 ? "Thiếu " + formatMoney(Math.abs(change)) : formatMoney(change);
+			el.className = change < 0 ? "text-2xl font-bold text-red-600" : "text-2xl font-bold text-green-600";
+
+			// 3. --- LOGIC ĐỔI MÀU NÚT XÁC NHẬN (MỚI) ---
+			const btn = document.getElementById('btn-confirm-pay');
+			
+			if (btn) {
+				if (change >= 0) {
+					// === TRƯỜNG HỢP 1: ĐỦ TIỀN (SÁNG RỰC) ===
+					
+					// Xóa style "thiếu tiền"
+					btn.classList.remove('bg-gray-200', 'text-gray-400', 'shadow-none', 'bg-red-50', 'text-red-500');
+					
+					// Thêm hiệu ứng Gradient + Bóng + Rung (Pulse) giống nút Giỏ hàng
+					btn.classList.add(
+						'bg-gradient-to-r', 'from-blue-600', 'to-indigo-600', // Màu chuyển sắc
+						'text-white',
+						'shadow-lg', 'shadow-blue-500/50', // Bóng đổ phát sáng
+						'active:scale-[0.98]', // Hiệu ứng lún xuống khi bấm
+						'cart-active-pulse' // Hiệu ứng nhịp đập
+					);
+					
+					// Đổi nội dung lại bình thường ✅ ⚠️
+					btn.innerHTML = `<span>XÁC NHẬN THANH TOÁN</span> <span class="text-xl"></span>`;
+					
+				} else {
+					// === TRƯỜNG HỢP 2: THIẾU TIỀN (XÁM HOẶC ĐỎ NHẠT) ===
+					
+					// Reset style xịn
+					btn.className = "w-full p-4 rounded-xl font-bold text-lg transition-all duration-300 flex justify-center items-center gap-2 group";
+					
+					// Thêm style cảnh báo nhẹ
+					btn.classList.add('bg-red-50', 'text-red-400', 'shadow-inner', 'border', 'border-red-100');
+					
+					// Báo luôn số tiền thiếu trên nút
+					btn.innerHTML = `<span>CÒN THIẾU: ${formatMoney(Math.abs(change))}</span> <span class="animate-bounce"></span>`;
+				}
+			}
+		}
+		
+        function addMoney(n) { 
+			const el=document.getElementById('money-received'); 
+			el.value=(parseInt(el.value)||0)+n; 
+			calculateChange(); 
+		}
+		
+        function setExactMoney() { 
+			document.getElementById('money-received').value = cart.reduce((s,i)=>s+(i.quantity*i.finalPrice),0); 
+			calculateChange(); 
+		}
         
         async function processPayment() {
 			// 1. Tính toán trước các con số
@@ -1329,11 +1552,16 @@
 				return;
 			}
 
-			// Đóng modal nhập mật khẩu
+			// --- SỬA LỖI TẠI ĐÂY ---
+			
+			// 1. Lấy email ra biến cục bộ TRƯỚC
+			const email = pendingQREmail;
+
+			// 2. Sau đó mới đóng Modal (Lúc này pendingQREmail bị xóa cũng không sao)
 			closePassModal();
 
-			// --- BẮT ĐẦU LOGIC TẠO QR (Code cũ của bạn) ---
-			const email = pendingQREmail;
+			// -----------------------
+
 			const jsonString = JSON.stringify({ action: "login", email: email, pass: pass });
 			
 			const modal = document.getElementById('qr-modal');
@@ -1348,7 +1576,7 @@
 			container.innerHTML = ""; 
 
 			setTimeout(() => {
-				// Cấu hình QR Code (Giữ nguyên cấu hình của bạn)
+				// Cấu hình QR Code
 				new QRCode(container, {
 					text: jsonString,
 					width: 250,
@@ -1357,7 +1585,7 @@
 					colorLight: "#ffffff",
 					correctLevel: QRCode.CorrectLevel.H,
 					
-					// --- LOGO (Bạn nhớ thay đường dẫn ảnh thật hoặc dùng Base64) ---
+					// Logo (Base64 hoặc link ảnh)
 					logo: "mini_pos.png", 
 					logoWidth: 60,
 					logoHeight: 60,
@@ -1416,7 +1644,7 @@
 					link.click();
 					document.body.removeChild(link);
 				} else {
-					alert("Chưa có mã QR để lưu!");
+					showAlert("Lỗi", 'Chưa có mã QR để lưu!', "error");
 				}
 			}
 		}
@@ -2066,7 +2294,7 @@
 				() => {} // Bỏ qua lỗi đang quét
 			).catch(err => {
 				console.error(err);
-				alert("Không mở được camera sau. Đang thử camera trước...");
+				showAlert("Lỗi", 'Không mở được camera sau. Đang thử camera trước...', "error");
 				// Fallback sang camera trước nếu lỗi
 				html5QrCode.start({ facingMode: "user" }, config, (t) => handleLoginQRResult(t));
 			});
@@ -2110,26 +2338,134 @@
 
 				} else {
 					// --- ĐÂY LÀ CHỖ BÁO LỖI CỦA BẠN ---
-					// Mình sửa lại để nó báo cụ thể thiếu cái gì
 					let missing = [];
 					if (data.action !== 'login') missing.push(`Sai action (nhận được: ${data.action})`);
 					if (!data.email) missing.push("Thiếu Email");
 					if (!data.pass) missing.push("Thiếu Pass");
 
-					alert(`⚠️ Mã không hợp lệ!\n\nChi tiết lỗi:\n- ${missing.join('\n- ')}\n\nDữ liệu gốc: ${JSON.stringify(data)}`);
+					showAlert("Cảnh báo",'⚠️ Mã không hợp lệ!', "waning");
 				}
 			} catch (e) {
 				console.log("Lỗi đọc mã:", text);
-				alert("❌ Lỗi format: Mã QR này không chứa dữ liệu JSON hợp lệ.");
+				showAlert("Lỗi", '❌ Lỗi format: Mã QR này không chứa dữ liệu JSON hợp lệ.', "error");
 			}
 		}
 		
 		// Lắng nghe sự kiện phím Enter tại ô mật khẩu
-		document.getElementById('qr-password-input').addEventListener('keypress', function (e) {
+		document.getElementById('qr-password-input').addEventListener('keyup', function (e) {
 			if (e.key === 'Enter') {
+				// Ẩn bàn phím ảo ngay lập tức để nhìn thấy màn hình
+				e.target.blur(); 
 				submitQRPassword();
 			}
 		});
+		
+		// === LOGIC CÀI ĐẶT NÚT SCAN (3 CHẾ ĐỘ MỚI) ===
+		let currentScanMode = localStorage.getItem('pos_scan_mode') || 'default'; // Mặc định là nút to
+
+		function initScanSettings() {
+			const radios = document.getElementsByName('scan_mode');
+			radios.forEach(r => {
+				if(r.value === currentScanMode) r.checked = true;
+			});
+			updateScanButtonBehavior();
+		}
+
+		// 2. Hàm mở bảng cài đặt
+		function openScanSettings() {
+			initScanSettings();
+			document.getElementById('scan-settings-modal').classList.remove('hidden');
+		}
+
+		// 3. Hàm lưu cài đặt khi chọn Radio
+		function saveScanMode(mode) {
+			currentScanMode = mode;
+			localStorage.setItem('pos_scan_mode', mode);
+			updateScanButtonBehavior();
+			
+			// Nếu chuyển chế độ, tốt nhất là tắt camera đi để reset giao diện
+			stopScanner();
+			
+			if(navigator.vibrate) navigator.vibrate(50);
+		}
+
+		// 4. Cập nhật hành vi nút bấm (QUAN TRỌNG)
+		function updateScanButtonBehavior() {
+			const container = document.getElementById('scan-buttons-container');
+			const bigButton = document.getElementById('camera-placeholder'); // Nút to giữa màn hình
+			
+			if(!container) return;
+			container.innerHTML = ""; // Xóa nút nhỏ cũ
+
+			if (currentScanMode === 'default') {
+				// --- CHẾ ĐỘ 1: MẶC ĐỊNH ---
+				// 1. Hiện nút to (nếu camera đang tắt)
+				if (bigButton && (!html5QrcodeScanner || !html5QrcodeScanner.isScanning)) {
+					bigButton.classList.remove('hidden');
+				}
+				// 2. Không hiện nút nhỏ nào cả (container rỗng)
+			} 
+			else {
+				// --- CHẾ ĐỘ 2 & 3: DÙNG NÚT NHỎ ---
+				
+				// 1. Luôn Ẩn nút to
+				if (bigButton) bigButton.classList.add('hidden');
+
+				// 2. Thêm nút nhỏ tương ứng
+				if (currentScanMode === 'toggle') {
+					container.appendChild(createToggleButton());
+				} 
+				else if (currentScanMode === 'hold') {
+					container.appendChild(createHoldButton());
+				}
+			}
+		}
+
+		function createToggleButton() {
+			const btn = document.createElement('button');
+			btn.className = "w-14 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center text-2xl shadow-lg active:scale-90 transition-transform shrink-0";
+			btn.innerHTML = `
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7">
+				  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+				  <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75zM16.5 19.5h.75v.75h-.75v-.75z" />
+				</svg>
+			`;
+			btn.onclick = () => {
+				if (html5QrcodeScanner && html5QrcodeScanner.isScanning) stopScanner();
+				else startScanner();
+			};
+			return btn;
+		}
+
+		function createHoldButton() {
+			const btn = document.createElement('button');
+			btn.className = "w-14 h-12 rounded-xl bg-orange-500 text-white flex items-center justify-center text-2xl shadow-lg active:scale-90 transition-transform shrink-0 select-none touch-none";
+			btn.innerHTML = "👆";
+			
+			const start = (e) => { 
+				if(e.cancelable) e.preventDefault(); 
+				startScanner(); 
+				btn.classList.add('scale-110', 'bg-orange-600'); 
+			};
+			const stop = (e) => { 
+				if(e.cancelable) e.preventDefault(); 
+				stopScanner(); 
+				btn.classList.remove('scale-110', 'bg-orange-600'); 
+			};
+
+			btn.addEventListener('touchstart', start, { passive: false });
+			btn.addEventListener('touchend', stop);
+			btn.addEventListener('mousedown', start);
+			btn.addEventListener('mouseup', stop);
+			btn.addEventListener('mouseleave', () => {
+				if (html5QrcodeScanner && html5QrcodeScanner.isScanning) stop();
+			});
+
+			return btn;
+		}
+
+		// Gọi hàm khởi tạo ngay khi script chạy (hoặc nhét vào checkSession)
+		setTimeout(initScanSettings, 500);
     </script>
 	<script>
 		// Đăng ký PWA Service Worker
