@@ -2090,37 +2090,37 @@
 			try {
 				// 1. Thử giải mã JSON
 				const data = JSON.parse(text);
+				
+				console.log("Dữ liệu quét được:", data); // Xem trong Console F12
 
-				// 2. Kiểm tra đúng format login không
+				// 2. Kiểm tra dữ liệu
+				// Mã chuẩn phải có đủ 3 món: action="login", email, pass
 				if (data.action === 'login' && data.email && data.pass) {
 					
-					// --- THÀNH CÔNG ---
-					if(navigator.vibrate) navigator.vibrate(200); // Rung báo hiệu
-					
-					// Tắt camera ngay
+					if(navigator.vibrate) navigator.vibrate(200);
 					stopLoginScanner();
 
-					// Điền thông tin
 					document.getElementById('email').value = data.email;
 					document.getElementById('password').value = data.pass;
 					
-					// Hiện thông báo đang xử lý
 					document.getElementById('login-msg').innerText = "✅ Đã nhận mã! Đang đăng nhập...";
 					document.getElementById('login-msg').className = "text-center text-green-600 text-xs font-bold min-h-[20px]";
 
-					// Tự động bấm nút đăng nhập sau 0.5s
-					setTimeout(() => {
-						handleLogin();
-					}, 500);
+					setTimeout(() => { handleLogin(); }, 500);
 
 				} else {
-					// Quét trúng mã JSON nhưng không phải mã Login
-					alert("⚠️ Mã này không phải mã đăng nhập POS!");
+					// --- ĐÂY LÀ CHỖ BÁO LỖI CỦA BẠN ---
+					// Mình sửa lại để nó báo cụ thể thiếu cái gì
+					let missing = [];
+					if (data.action !== 'login') missing.push(`Sai action (nhận được: ${data.action})`);
+					if (!data.email) missing.push("Thiếu Email");
+					if (!data.pass) missing.push("Thiếu Pass");
+
+					alert(`⚠️ Mã không hợp lệ!\n\nChi tiết lỗi:\n- ${missing.join('\n- ')}\n\nDữ liệu gốc: ${JSON.stringify(data)}`);
 				}
 			} catch (e) {
-				// 3. Trường hợp quét trúng mã rác (không phải JSON)
 				console.log("Lỗi đọc mã:", text);
-				alert("❌ Mã QR không hợp lệ! Vui lòng dùng mã được tạo từ trang Admin.");
+				alert("❌ Lỗi format: Mã QR này không chứa dữ liệu JSON hợp lệ.");
 			}
 		}
 		
