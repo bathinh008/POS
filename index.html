@@ -2088,32 +2088,39 @@
 
 		function handleLoginQRResult(text) {
 			try {
+				// 1. Thử giải mã JSON
 				const data = JSON.parse(text);
 
+				// 2. Kiểm tra đúng format login không
 				if (data.action === 'login' && data.email && data.pass) {
-					// 1. Báo rung
-					if(navigator.vibrate) navigator.vibrate(200);
 					
-					// 2. Tắt camera ngay
+					// --- THÀNH CÔNG ---
+					if(navigator.vibrate) navigator.vibrate(200); // Rung báo hiệu
+					
+					// Tắt camera ngay
 					stopLoginScanner();
 
-					// 3. Điền thông tin
+					// Điền thông tin
 					document.getElementById('email').value = data.email;
 					document.getElementById('password').value = data.pass;
 					
-					// 4. Hiện thông báo nhỏ (UX)
-					document.getElementById('login-msg').innerText = "🔄 Đang đăng nhập...";
+					// Hiện thông báo đang xử lý
+					document.getElementById('login-msg').innerText = "✅ Đã nhận mã! Đang đăng nhập...";
+					document.getElementById('login-msg').className = "text-center text-green-600 text-xs font-bold min-h-[20px]";
 
-					// 5. Gọi hàm đăng nhập (Thêm delay nhỏ để tắt camera xong hẳn mới login)
+					// Tự động bấm nút đăng nhập sau 0.5s
 					setTimeout(() => {
 						handleLogin();
-					}, 300);
+					}, 500);
+
 				} else {
-					// Nếu quét nhầm mã không phải mã login
-					alert("Mã QR không hợp lệ! Vui lòng quét mã thẻ nhân viên.");
+					// Quét trúng mã JSON nhưng không phải mã Login
+					alert("⚠️ Mã này không phải mã đăng nhập POS!");
 				}
 			} catch (e) {
+				// 3. Trường hợp quét trúng mã rác (không phải JSON)
 				console.log("Lỗi đọc mã:", text);
+				alert("❌ Mã QR không hợp lệ! Vui lòng dùng mã được tạo từ trang Admin.");
 			}
 		}
 		
