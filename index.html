@@ -97,16 +97,18 @@
 				</div>
 				
 				<button onclick="startLoginScanner()" class="w-full bg-white text-gray-700 border border-gray-300 py-3 rounded-xl font-bold shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2">
-					<i class="fas fa-qrcode"></i> Quét mã thẻ nhân viên
+					<i class="fas fa-qrcode"></i> Quét mã QR đăng nhập
 				</button>
 			</div>
 		</div>
 
 		<div id="login-scanner-overlay" class="hidden fixed inset-0 bg-black bg-opacity-90 z-[60] flex flex-col items-center justify-center">
 			<p class="text-white font-bold mb-4 text-lg">Đưa mã QR vào khung</p>
-			<div class="relative w-64 h-64 border-4 border-blue-500 rounded-2xl overflow-hidden shadow-2xl bg-black">
-				<video id="login-video" class="absolute inset-0 w-full h-full object-cover"></video>
+			
+			<div class="relative w-80 h-80 border-4 border-blue-500 rounded-2xl overflow-hidden shadow-2xl bg-black">
+				<div id="reader" class="w-full h-full"></div>
 			</div>
+
 			<button onclick="stopLoginScanner()" class="mt-8 bg-white text-red-600 px-6 py-2 rounded-full font-bold shadow-lg">Đóng Camera</button>
 		</div>
 	</div>
@@ -2040,46 +2042,60 @@
 		// ==========================================
 		// --- TÍNH NĂNG ĐĂNG NHẬP BẰNG QR CODE ---
 		// ==========================================
-		let loginCodeReader = null; // Biến quản lý camera
+		let html5QrCode; 
 
-		async function startLoginScanner() {
-			// 1. Hiển thị khung camera
+		function startLoginScanner() {
+			// 1. Hiển thị khung Overlay
 			const overlay = document.getElementById('login-scanner-overlay');
-			if(overlay) overlay.classList.remove('hidden');
-			
-			// 2. Khởi tạo thư viện quét
-			if (!loginCodeReader) {
-				loginCodeReader = new ZXing.BrowserMultiFormatReader();
+			if (overlay) overlay.classList.remove('hidden');
+
+			// 2. Nếu chưa khởi tạo thì tạo mới
+			// 'reader' là id của thẻ div trong HTML ở Bước 1
+			if (!html5QrCode) {
+				html5QrCode = new Html5Qrcode("reader");
 			}
 
-			try {
-				// Lấy danh sách camera
-				const videoInputDevices = await loginCodeReader.listVideoInputDevices();
-				// Ưu tiên camera sau (nếu có), không thì lấy camera đầu tiên
-				const selectedDeviceId = videoInputDevices.find(device => device.label.toLowerCase().includes('back'))?.deviceId || videoInputDevices[0].deviceId;
+			// 3. Cấu hình Camera (QUAN TRỌNG)
+			const config = { 
+				fps: 10,             // Số khung hình/giây (10 là mượt)
+				qrbox: 250,          // Kích thước vùng quét xanh xanh (250px)
+				aspectRatio: 1.0     // Tỉ lệ khung hình vuông
+			};
 
-				// Bắt đầu quét liên tục
-				await loginCodeReader.decodeFromVideoDevice(selectedDeviceId, 'login-video', (result, err) => {
-					if (result) {
-						// Nếu quét trúng thì xử lý
-						handleLoginQRResult(result.text);
-					}
-				});
-			} catch (err) {
+			// 4. Bắt đầu quét
+			html5QrCode.start(
+				{ facingMode: "environment" }, // Ưu tiên Camera sau
+				config,
+				(decodedText, decodedResult) => {
+					// === KHI QUÉT THÀNH CÔNG ===
+					console.log(`Đã quét được: ${decodedText}`);
+					handleLoginQRResult(decodedText);
+				},
+				(errorMessage) => {
+					// Đang quét mà chưa thấy mã... (Kệ nó, không cần log lỗi này)
+				}
+			).catch(err => {
+				// === LỖI KHÔNG MỞ ĐƯỢC CAMERA ===
 				console.error(err);
-				showAlert("Lỗi", 'Không thể mở camera. Vui lòng cấp quyền truy cập!', "error");
-				stopLoginScanner();
-			}
+				
+				// Fallback: Nếu lỗi do camera sau, thử mở camera bất kỳ
+				alert("Không thể mở Camera sau. Đang thử camera trước...");
+				html5QrCode.start({ facingMode: "user" }, config, (text) => handleLoginQRResult(text));
+			});
 		}
 
 		function stopLoginScanner() {
-			// 1. Tắt camera để tiết kiệm pin
-			if (loginCodeReader) {
-				loginCodeReader.reset();
+			// 1. Tắt camera
+			if (html5QrCode && html5QrCode.isScanning) {
+				html5QrCode.stop().then(() => {
+					console.log("Đã tắt camera");
+					html5QrCode.clear();
+				}).catch(err => console.log("Lỗi tắt camera:", err));
 			}
-			// 2. Ẩn khung camera
+
+			// 2. Ẩn Overlay
 			const overlay = document.getElementById('login-scanner-overlay');
-			if(overlay) overlay.classList.add('hidden');
+			if (overlay) overlay.classList.add('hidden');
 		}
 
 		function handleLoginQRResult(text) {
