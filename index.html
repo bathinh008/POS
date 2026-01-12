@@ -165,16 +165,16 @@
 		<div class="bg-white px-3 py-2 border-b shadow-sm z-20 sticky top-0">
 			<div class="flex gap-3 overflow-x-auto no-scrollbar pb-1">
 				<button onclick="toggleCheckPriceMode()" class="flex items-center gap-2 bg-teal-50 text-teal-700 px-4 py-2 rounded-full border border-teal-100 font-bold text-xs whitespace-nowrap active:scale-95 transition-transform shrink-0">
-					<span>🔍</span> <span>Check giá</span>
+					<span>🔍</span> <span>Kiểm tra giá</span>
 				</button>
 
 				<button onclick="showRecallModal()" class="flex items-center gap-2 bg-orange-50 text-orange-600 px-4 py-2 rounded-full border border-orange-100 font-bold text-xs whitespace-nowrap active:scale-95 transition-transform shrink-0 relative">
 					<span id="parked-count" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center border border-white">0</span>
-					<span>🛑 Đơn chờ</span>
+					<span>🛑 Giao dịch chờ</span>
 				</button>
 
 				<button onclick="openHistory()" class="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-full border border-blue-100 font-bold text-xs whitespace-nowrap active:scale-95 transition-transform shrink-0">
-					<span>🕒 Lịch sử</span>
+					<span>🕒 Lịch sử giao dịch</span>
 				</button>
 				
 				<button id="btn-open-admin" onclick="openAdminScreen()" class="hidden flex items-center gap-2 bg-purple-50 text-purple-600 px-4 py-2 rounded-full border border-purple-100 font-bold text-xs whitespace-nowrap active:scale-95 transition-transform shrink-0">
@@ -182,7 +182,7 @@
 				</button>
 				
 				<button onclick="confirmLogout()" class="flex items-center gap-2 bg-gray-100 text-gray-600 px-4 py-2 rounded-full border border-gray-200 font-bold text-xs whitespace-nowrap active:scale-95 transition-transform shrink-0">
-					<span>🚪 Thoát</span>
+					<span>🚪 Đăng xuất</span>
 				</button>
 			</div>
 		</div>
@@ -222,7 +222,7 @@
 			<div id="sales-panel" class="block">
 				<div class="p-4 pb-2">
 					<div class="mb-3 flex gap-2 items-center">
-    
+						
 						<button onclick="openScanSettings()" class="w-12 h-12 rounded-xl bg-gray-200 text-gray-600 flex items-center justify-center text-xl shadow-sm active:scale-95 transition-transform shrink-0">
 							⚙️
 						</button>
@@ -231,7 +231,7 @@
 							<input 
 								type="tel" 
 								id="manual-input" 
-								placeholder="Nhập mã hoặc số lượng (vd: 5*)" 
+								placeholder="Nhập mã..." 
 								class="w-full bg-gray-100 p-3.5 pl-10 rounded-xl text-lg font-semibold outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all shadow-inner" 
 								onkeyup="handleManualInput(event)"
 								enterkeyhint="search"
@@ -259,7 +259,7 @@
 				</div>
 
 				<div class="px-4 pb-4 pt-2">
-					<button id="btn-cart-payment" onclick="goToPayment()" class="w-full bg-gray-200 text-gray-400 p-4 rounded-2xl font-bold text-xl shadow-none flex justify-between items-center active:scale-[0.98] transition-all duration-300 group">
+					<button id="btn-cart-payment" onclick="goToPayment()" class="w-full bg-gray-200 text-gray-400 p-4 rounded-2xl font-bold text-xl shadow-none flex justify-between items-center active:scale-[0.98] transition-all duration-300 group pointer-events-none">
 						<div class="flex items-center gap-3">
 							<span class="bg-black/10 px-3 py-1 rounded-lg text-sm backdrop-blur-md" id="quick-count">0</span>
 							<span class="text-sm font-normal opacity-90">Giỏ hàng</span>
@@ -270,6 +270,7 @@
 			</div>
 
 			<div id="check-price-panel" class="hidden bg-teal-50 h-full flex flex-col">
+				
 				<div class="px-4 py-3 bg-teal-600 text-white flex justify-between items-center shadow-md shrink-0">
 					<div class="flex items-center gap-2">
 						<span class="text-2xl animate-bounce">🔍</span>
@@ -282,19 +283,25 @@
 				</div>
 
 				<div class="p-4 flex-1 flex flex-col gap-3">
-					<div class="relative">
-						<input 
-							type="tel" 
-							id="check-price-input" 
-							placeholder="Quét hoặc nhập mã..." 
-							class="w-full bg-white border-2 border-teal-200 p-3 pl-10 rounded-xl text-lg font-bold outline-none focus:border-teal-500 text-teal-800" 
-							onkeyup="handleCheckPriceManual(event)"
-							enterkeyhint="search"
-							autocomplete="off"
-							autocorrect="off"
-							autocapitalize="off"
-						>
-						<span class="absolute left-3 top-3.5 text-teal-300">🔎</span>
+					<div class="flex gap-2 items-center">
+						<button onclick="openScanSettings()" class="w-12 h-12 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center text-xl shadow-sm active:scale-95 transition-transform shrink-0 border border-teal-200">
+							⚙️
+						</button>
+
+						<div class="relative flex-1 group">
+							<input 
+								type="tel" 
+								id="check-price-input" 
+								placeholder="Quét hoặc nhập mã..." 
+								class="w-full bg-white border-2 border-teal-200 p-3.5 pl-10 rounded-xl text-lg font-bold outline-none focus:border-teal-500 text-teal-800 transition-all shadow-inner" 
+								onkeyup="handleCheckPriceManual(event)"
+								enterkeyhint="search"
+								autocomplete="off"
+							>
+							<span class="absolute left-3 top-4 text-teal-300">🔎</span>
+						</div>
+
+						<div id="scan-buttons-container-check" class="flex gap-1 shrink-0"></div>
 					</div>
 
 					<div id="check-result-container" class="bg-white rounded-2xl border border-teal-100 shadow-sm flex-1 flex flex-col items-center justify-center p-4 text-center min-h-[160px]">
@@ -310,7 +317,15 @@
 
     <div id="admin-screen" class="hidden fixed inset-0 z-40 bg-gray-50 flex flex-col h-full animate-fade-in">
         <div class="bg-white p-4 shadow-md flex justify-between items-center z-10 sticky top-0">
-            <div class="flex items-center gap-2"><button onclick="closeAdminScreen()" class="p-2 -ml-2 hover:bg-gray-100 rounded-full">⬅</button><h2 class="font-bold text-xl text-gray-800">Quản Lý</h2></div>
+            <div class="flex items-center gap-2">
+				<!--<button onclick="closeAdminScreen()" class="p-2 -ml-2 hover:bg-gray-100 rounded-full">⬅</button>-->
+				<button onclick="closeAdminScreen()" class="group w-10 h-10 flex items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm text-gray-500 hover:text-blue-600 hover:border-blue-200 active:scale-95 transition-all -ml-1 mr-2">
+					<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 group-hover:-translate-x-0.5 transition-transform">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+					</svg>
+				</button>
+				<h2 class="font-bold text-xl text-gray-800">Quản Lý</h2>
+			</div>
             <button onclick="forceLogout()" class="text-xs text-red-500 border border-red-200 px-2 py-1 rounded">Đăng xuất</button>
         </div>
         <div class="p-3 bg-white border-b flex gap-2">
@@ -425,7 +440,11 @@
 
     <div id="payment-screen" class="hidden h-dvh w-full flex flex-col bg-gray-50 absolute inset-0 z-50">
         <div class="bg-white p-4 shadow-sm flex items-center gap-3 sticky top-0 z-20">
-            <button onclick="backToScan()" class="p-2 -ml-2 hover:bg-gray-100 rounded-full">⬅</button>
+            <button onclick="backToScan()" class="group w-10 h-10 flex items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm text-gray-500 hover:text-blue-600 hover:border-blue-200 active:scale-95 transition-all -ml-1 mr-2">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 group-hover:-translate-x-0.5 transition-transform">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+				</svg>
+			</button>
             <h2 class="font-bold text-lg">Thanh toán</h2>
         </div>
         <div class="flex-1 overflow-y-auto p-4 space-y-3 pb-40" id="cart-list"></div>
@@ -2415,32 +2434,34 @@
 
 		// 4. Cập nhật hành vi nút bấm (QUAN TRỌNG)
 		function updateScanButtonBehavior() {
-			const container = document.getElementById('scan-buttons-container');
+			const containerSales = document.getElementById('scan-buttons-container');      // Chỗ bán hàng
+			const containerCheck = document.getElementById('scan-buttons-container-check'); // Chỗ check giá
 			const bigButton = document.getElementById('camera-placeholder'); // Nút to giữa màn hình
 			
-			if(!container) return;
-			container.innerHTML = ""; // Xóa nút nhỏ cũ
+			// 1. Xóa nút cũ ở cả 2 nơi
+			if (containerSales) containerSales.innerHTML = "";
+			if (containerCheck) containerCheck.innerHTML = "";
 
 			if (currentScanMode === 'default') {
 				// --- CHẾ ĐỘ 1: MẶC ĐỊNH ---
-				// 1. Hiện nút to (nếu camera đang tắt)
 				if (bigButton && (!html5QrcodeScanner || !html5QrcodeScanner.isScanning)) {
 					bigButton.classList.remove('hidden');
 				}
-				// 2. Không hiện nút nhỏ nào cả (container rỗng)
 			} 
 			else {
 				// --- CHẾ ĐỘ 2 & 3: DÙNG NÚT NHỎ ---
-				
-				// 1. Luôn Ẩn nút to
 				if (bigButton) bigButton.classList.add('hidden');
 
-				// 2. Thêm nút nhỏ tương ứng
+				// Logic tạo nút dựa trên chế độ
 				if (currentScanMode === 'toggle') {
-					container.appendChild(createToggleButton());
+					// Thêm nút vào màn hình Bán hàng
+					if(containerSales) containerSales.appendChild(createToggleButton());
+					// Thêm nút vào màn hình Check giá (Phải tạo mới, không dùng lại biến cũ được)
+					if(containerCheck) containerCheck.appendChild(createToggleButton());
 				} 
 				else if (currentScanMode === 'hold') {
-					container.appendChild(createHoldButton());
+					if(containerSales) containerSales.appendChild(createHoldButton());
+					if(containerCheck) containerCheck.appendChild(createHoldButton());
 				}
 			}
 		}

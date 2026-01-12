@@ -1,4 +1,5 @@
-const CACHE_NAME = 'pos-app-v1';
+const CACHE_NAME = 'pos-app-v2'; 
+
 const ASSETS = [
   './',
   './index.html',
@@ -12,6 +13,9 @@ const ASSETS = [
 
 // 1. Cài đặt và lưu cache
 self.addEventListener('install', (e) => {
+  // Buộc Service Worker mới kích hoạt ngay lập tức (bỏ qua trạng thái waiting)
+  self.skipWaiting();
+  
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
@@ -22,4 +26,17 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(e.request).then((response) => response || fetch(e.request))
   );
+});
+
+// 3. Xóa cache cũ (v1) khi active v2 (Thêm đoạn này để dọn dẹp)
+self.addEventListener('activate', (e) => {
+    e.waitUntil(
+        caches.keys().then((keyList) => {
+            return Promise.all(keyList.map((key) => {
+                if (key !== CACHE_NAME) {
+                    return caches.delete(key);
+                }
+            }));
+        })
+    );
 });
