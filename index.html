@@ -459,7 +459,24 @@
 					<button onclick="setExactMoney()" class="text-xs text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded">Nhập đúng số tiền</button>
 				</div>
 				<div class="relative">
-					<input type="number" id="money-received" placeholder="0" class="w-full bg-gray-100 p-3 rounded-xl text-xl font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500" oninput="calculateChange()">
+					<input 
+						type="number" 
+						id="money-received" 
+						placeholder="0" 
+						class="w-full bg-gray-100 p-3 pr-12 rounded-xl text-xl font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 transition-all" 
+						oninput="calculateChange()"
+					>
+					
+					<button 
+						id="btn-clear-money"
+						onclick="clearMoneyInput()" 
+						class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-200 transition-colors"
+						tabindex="-1"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+							<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+						</svg>
+					</button>
 				</div>
 				<div class="flex gap-2 mt-2 overflow-x-auto pb-1 no-scrollbar">
 					<button onclick="addMoney(500000)" class="bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap active:bg-green-100">+500k</button>
@@ -485,7 +502,7 @@
 		<div class="bg-white rounded-xl shadow-2xl w-full max-w-lg h-[85vh] flex flex-col overflow-hidden">
 			<div class="p-4 border-b flex justify-between items-center bg-gray-50">
 				<h3 class="font-bold text-gray-800">Lịch sử giao dịch</h3>
-				<button onclick="document.getElementById('history-modal').classList.add('hidden')" class="text-2xl text-gray-400">×</button>
+				<button onclick="document.getElementById('history-modal').classList.add('hidden'); document.getElementById('history-detail-panel').classList.add('hidden')" class="text-2xl text-gray-400">×</button>
 			</div>
 			<div id="history-list" class="flex-1 overflow-y-auto p-2 space-y-2 bg-gray-100"></div>
 		</div>
@@ -514,21 +531,8 @@
 			</table>
 		</div>
 		
-		<div class="p-4 bg-gray-50 border-t space-y-2">
-			<div class="flex justify-between text-sm">
-				<span class="text-gray-500">Tổng tiền hàng:</span>
-				<span class="font-bold text-gray-800" id="hist-detail-total">0đ</span>
-			</div>
-			<div class="flex justify-between text-sm">
-				<span class="text-gray-500">Khách đưa:</span>
-				<span class="font-bold text-blue-600" id="hist-detail-received">---</span>
-			</div>
-			<div class="flex justify-between text-lg pt-2 border-t border-dashed border-gray-300">
-				<span class="font-bold text-orange-600">Tiền thối lại:</span>
-				<span class="font-bold text-orange-600" id="hist-detail-change">---</span>
-			</div>
-		</div>
-	</div>
+		<div id="hist-detail-footer" class="p-4 bg-gray-50 border-t space-y-2"></div>
+    </div>
 
     <div id="recall-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-overlay p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col">
@@ -696,6 +700,32 @@
 		</div>
 	</div>
 
+	<div id="return-modal" class="hidden fixed inset-0 z-[80] bg-black bg-opacity-60 flex items-center justify-center p-4 backdrop-blur-sm">
+		<div class="bg-white rounded-xl shadow-2xl p-5 w-full max-w-xs animate-popIn">
+			<h3 class="font-bold text-lg text-red-600 mb-2">🔄 Trả Hàng & Hoàn Tiền</h3>
+			<p class="text-sm text-gray-500 mb-4" id="return-item-name">Tên sản phẩm...</p>
+			
+			<div class="mb-4">
+				<label class="text-xs font-bold text-gray-400 uppercase">Số lượng trả</label>
+				<div class="flex items-center gap-2 mt-1">
+					<button onclick="adjustReturnQty(-1)" class="w-10 h-10 bg-gray-100 rounded-lg font-bold text-xl text-gray-600">-</button>
+					<input type="number" id="return-qty-input" class="flex-1 bg-gray-50 border border-gray-200 h-10 rounded-lg text-center font-bold text-lg outline-none focus:border-red-500" value="1">
+					<button onclick="adjustReturnQty(1)" class="w-10 h-10 bg-gray-100 rounded-lg font-bold text-xl text-gray-600">+</button>
+				</div>
+				<p class="text-[10px] text-gray-400 mt-1 text-right">Đã mua: <span id="return-max-qty">0</span></p>
+			</div>
+
+			<div class="bg-orange-50 p-3 rounded-lg border border-orange-100 mb-4 text-center">
+				<span class="text-xs text-orange-600 font-bold block">Số tiền cần hoàn lại khách:</span>
+				<span id="return-refund-amt" class="text-xl font-bold text-orange-700">0đ</span>
+			</div>
+
+			<div class="grid grid-cols-2 gap-3">
+				<button onclick="closeReturnModal()" class="py-2 bg-gray-100 text-gray-600 rounded-lg font-bold">Hủy</button>
+				<button onclick="confirmReturn()" class="py-2 bg-red-600 text-white rounded-lg font-bold shadow-md hover:bg-red-700">Xác Nhận</button>
+			</div>
+		</div>
+	</div>
     <script>
         const SUPABASE_URL = 'https://renqusdcczlhrglbclhe.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlbnF1c2RjY3psaHJnbGJjbGhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTIyMzUsImV4cCI6MjA4MDU4ODIzNX0.kF960FS-VvAM2rkNo9kVHfmGAkpwrmlZ5Vf9-QFiC2E';
@@ -1263,49 +1293,48 @@
         function calculateChange() {
 			// 1. Tính toán
 			const total = cart.reduce((s, i) => s + (i.quantity * i.finalPrice), 0);
-			const received = parseInt(document.getElementById('money-received').value) || 0;
+			const inputVal = document.getElementById('money-received').value;
+			const received = parseInt(inputVal) || 0;
 			const change = received - total;
 
-			// 2. Hiển thị text tiền thừa/thiếu (Giữ nguyên logic cũ)
+			// --- LOGIC MỚI: ẨN/HIỆN NÚT X ---
+			const btnClear = document.getElementById('btn-clear-money');
+			if (btnClear) {
+				// Nếu có giá trị và giá trị khác 0 thì hiện, ngược lại thì ẩn
+				if (inputVal && received !== 0) {
+					btnClear.classList.remove('hidden');
+				} else {
+					btnClear.classList.add('hidden');
+				}
+			}
+			// --------------------------------
+
+			// 2. Hiển thị text tiền thừa/thiếu
 			const el = document.getElementById('change-amount');
 			el.innerText = change < 0 ? "Thiếu " + formatMoney(Math.abs(change)) : formatMoney(change);
 			el.className = change < 0 ? "text-2xl font-bold text-red-600" : "text-2xl font-bold text-green-600";
 
-			// 3. --- LOGIC ĐỔI MÀU NÚT XÁC NHẬN (MỚI) ---
+			// 3. Logic đổi màu nút xác nhận
 			const btn = document.getElementById('btn-confirm-pay');
-			
 			if (btn) {
 				if (change >= 0) {
-					// === TRƯỜNG HỢP 1: ĐỦ TIỀN (SÁNG RỰC) ===
-					
-					// Xóa style "thiếu tiền"
 					btn.classList.remove('bg-gray-200', 'text-gray-400', 'shadow-none', 'bg-red-50', 'text-red-500');
-					
-					// Thêm hiệu ứng Gradient + Bóng + Rung (Pulse) giống nút Giỏ hàng
-					btn.classList.add(
-						'bg-gradient-to-r', 'from-blue-600', 'to-indigo-600', // Màu chuyển sắc
-						'text-white',
-						'shadow-lg', 'shadow-blue-500/50', // Bóng đổ phát sáng
-						'active:scale-[0.98]', // Hiệu ứng lún xuống khi bấm
-						'cart-active-pulse' // Hiệu ứng nhịp đập
-					);
-					
-					// Đổi nội dung lại bình thường ✅ ⚠️
-					btn.innerHTML = `<span>XÁC NHẬN THANH TOÁN</span> <span class="text-xl"></span>`;
-					
+					btn.classList.add('bg-gradient-to-r', 'from-blue-600', 'to-indigo-600', 'text-white', 'shadow-lg', 'shadow-blue-500/50', 'active:scale-[0.98]', 'cart-active-pulse');
+					btn.innerHTML = `<span>XÁC NHẬN THANH TOÁN</span>`;
 				} else {
-					// === TRƯỜNG HỢP 2: THIẾU TIỀN (XÁM HOẶC ĐỎ NHẠT) ===
-					
-					// Reset style xịn
 					btn.className = "w-full p-4 rounded-xl font-bold text-lg transition-all duration-300 flex justify-center items-center gap-2 group";
-					
-					// Thêm style cảnh báo nhẹ
 					btn.classList.add('bg-red-50', 'text-red-400', 'shadow-inner', 'border', 'border-red-100');
-					
-					// Báo luôn số tiền thiếu trên nút
 					btn.innerHTML = `<span>CÒN THIẾU: ${formatMoney(Math.abs(change))}</span> <span class="animate-bounce"></span>`;
 				}
 			}
+		}
+
+		// Hàm bấm nút X
+		function clearMoneyInput() {
+			const input = document.getElementById('money-received');
+			input.value = '';       
+			input.focus();          
+			calculateChange(); // Gọi lại hàm trên để tính lại tiền và ẩn nút X đi
 		}
 		
         function addMoney(n) { 
@@ -1344,7 +1373,13 @@
 				if (order) {
 					// 2. Lưu chi tiết đơn hàng (Giữ nguyên)
 					const items = cart.map(i => ({ 
-						order_id: order.id, product_name: i.name, quantity: i.quantity, price: i.finalPrice, total: i.quantity * i.finalPrice 
+						order_id: order.id, 
+						product_id: i.id,
+						product_name: i.name, 
+						quantity: i.quantity, 
+						price: i.finalPrice, 
+						total: i.quantity * i.finalPrice,
+						returned_quantity: 0 // Mặc định là 0
 					}));
 					await client.from('order_items').insert(items);
 
@@ -1751,22 +1786,19 @@
 			const d1 = new Date(startVal);
 			const d2 = new Date(endVal);
 			
-			// 1. Kiểm tra ngày kết thúc phải sau ngày bắt đầu
 			if (d2 < d1) return showAlert("Lỗi ngày", "Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu", 'error');
-
-			// 2. Kiểm tra giới hạn 1 tháng (31 ngày)
+			
+			// Giới hạn 31 ngày
 			const diffTime = Math.abs(d2 - d1);
 			const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
 			if (diffDays > 31) return showAlert("Giới hạn", "Vui lòng chỉ xem tối đa 31 ngày để đảm bảo tốc độ.", 'error');
 
-			// Chuẩn bị thời gian query (Full ngày)
 			const startISO = new Date(startVal + 'T00:00:00').toISOString();
 			const endISO = new Date(endVal + 'T23:59:59').toISOString();
 
-			// Hiện trạng thái đang tải
 			document.getElementById('revenue-list').innerHTML = '<div class="text-center py-8 text-gray-400 text-xs animate-pulse">⏳ Đang tải dữ liệu...</div>';
 
-			// Gọi Supabase
+			// Lấy dữ liệu từ Server
 			const { data: orders, error } = await client
 				.from('orders')
 				.select('*')
@@ -1779,7 +1811,6 @@
 				return showAlert("Lỗi", error.message, 'error');
 			}
 
-			// Xử lý hiển thị
 			if (!orders || orders.length === 0) {
 				document.getElementById('revenue-list').innerHTML = '<div class="text-center py-10 text-gray-400 flex flex-col items-center"><span class="text-4xl mb-2">📭</span><span>Không có đơn hàng nào</span></div>';
 				document.getElementById('filter-count').innerText = "0 đơn";
@@ -1787,14 +1818,28 @@
 				return;
 			}
 
-			// Tính tổng
-			const total = orders.reduce((sum, o) => sum + o.total_amount, 0);
+			// --- [QUAN TRỌNG] TÍNH TỔNG DOANH THU THỰC TẾ ---
+			// Công thức: Tổng = (Tổng tiền đơn - Tiền đã hoàn)
+			const total = orders.reduce((sum, o) => sum + (o.total_amount - (o.returned_amount || 0)), 0);
+			
 			document.getElementById('filter-count').innerText = `${orders.length} đơn`;
-			document.getElementById('filter-sum').innerText = formatMoney(total);
+			document.getElementById('filter-sum').innerText = formatMoney(total); // Cập nhật số tiền chuẩn xác lên giao diện
 
-			// Render Danh sách (Tái sử dụng hàm viewHistoryDetail để xem chi tiết khi click)
+			// Render Danh sách chi tiết
 			document.getElementById('revenue-list').innerHTML = orders.map(o => {
 				const noteSafe = encodeURIComponent(o.note || "");
+				
+				// Tính tiền thực của đơn này để hiển thị trong danh sách
+				const realAmount = o.total_amount - (o.returned_amount || 0);
+				
+				// Hiển thị thêm dòng ghi chú nếu có trả hàng
+				const refundNote = (o.returned_amount && o.returned_amount > 0) 
+					? `<div class="text-[9px] text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded inline-block text-right mt-1 border border-red-100">↩ Đã hoàn: -${formatMoney(o.returned_amount)}</div>` 
+					: '';
+
+				// Nếu có hoàn tiền thì đổi màu giá tiền sang màu cam để chú ý
+				const priceColor = (o.returned_amount > 0) ? "text-orange-600" : "text-blue-600";
+
 				return `
 				<div onclick="viewHistoryDetail(${o.id}, ${o.total_amount}, '${o.created_at}', '${noteSafe}')" class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center active:bg-gray-50 transition-colors cursor-pointer mb-2">
 					<div class="flex items-center gap-3">
@@ -1806,9 +1851,9 @@
 							</div>
 						</div>
 					</div>
-					<div class="text-right">
-						<div class="text-sm font-bold text-blue-600 font-display">${formatMoney(o.total_amount)}</div>
-						<div class="text-[10px] text-gray-400">Chi tiết ></div>
+					<div class="text-right flex flex-col items-end">
+						<div class="text-sm font-bold ${priceColor} font-display">${formatMoney(realAmount)}</div>
+						${refundNote}
 					</div>
 				</div>
 				`;
@@ -2032,39 +2077,282 @@
 		}
 
 		async function openHistory() {
-            document.getElementById('history-modal').classList.remove('hidden');
-            let { data: orders, error } = await client.from('orders').select('*').order('created_at', {ascending:false}).limit(20);
-            if(error) { const res = await client.from('orders').select('*').limit(20); orders = res.data; }
-            document.getElementById('history-list').innerHTML = orders.map(o => {
-                const noteSafe = encodeURIComponent(o.note || "");
-                return `
-                <div onclick="viewHistoryDetail(${o.id}, ${o.total_amount}, '${o.created_at}', '${noteSafe}')" class="bg-white p-3 border rounded-lg shadow-sm flex justify-between cursor-pointer hover:bg-blue-50 transition">
-                    <div>
-                        <div class="flex items-center gap-2"><span class="font-bold text-sm bg-gray-200 px-2 rounded">#${o.id}</span><span class="text-xs text-gray-500">${new Date(o.created_at || Date.now()).toLocaleString('vi-VN')}</span></div>
-                        <div class="text-xs text-gray-400 mt-1">${o.staff_email.split('@')[0]}</div>
-                    </div>
-                    <div class="font-bold text-blue-600 text-lg">${formatMoney(o.total_amount)}</div>
-                </div>`
-            }).join('');
-        }
+			document.getElementById('history-modal').classList.remove('hidden');
 
-		async function viewHistoryDetail(id, total, time, noteEncoded) {
-            document.getElementById('history-detail-panel').classList.remove('hidden');
-            document.getElementById('hist-detail-id').innerText = `Đơn hàng #${id}`;
-            document.getElementById('hist-detail-time').innerText = new Date(time).toLocaleString('vi-VN');
-            document.getElementById('hist-detail-total').innerText = formatMoney(total);
-            let received = 0, change = 0;
-            try { const noteDecoded = decodeURIComponent(noteEncoded); if(noteDecoded) { const extra = JSON.parse(noteDecoded); received = extra.received_money; change = extra.change_money; } } catch(e) {}
-            document.getElementById('hist-detail-received').innerText = received ? formatMoney(received) : "---";
-            document.getElementById('hist-detail-change').innerText = change ? formatMoney(change) : "---";
-            const { data: items } = await client.from('order_items').select('*').eq('order_id', id);
-            document.getElementById('hist-detail-items').innerHTML = items.map(i => {
-                const originalProd = productsDB.find(p => p.name === i.product_name) || {};
-                const barcode = originalProd.barcode || '---';
-                const unit = originalProd.unit || 'Cái';
-                return `<tr><td><div class="font-bold text-gray-800">${i.product_name}</div><div class="text-[10px] text-gray-500">Mã: ${barcode} | ĐVT: ${unit}</div></td><td class="text-right font-bold">x${i.quantity}</td><td class="text-right text-xs">${formatMoney(i.price)}</td><td class="text-right font-bold text-blue-600">${formatMoney(i.total)}</td></tr>`;
-            }).join('');
-        }
+			// 1. Lấy 20 đơn gần nhất
+			let { data: orders, error } = await client
+				.from('orders')
+				.select('*')
+				.order('created_at', { ascending: false })
+				.limit(20);
+
+			// Fallback nếu lỗi
+			if (error) {
+				const res = await client.from('orders').select('*').limit(20);
+				orders = res.data;
+			}
+
+			// 2. Render danh sách (Logic đồng bộ với Admin)
+			document.getElementById('history-list').innerHTML = (orders || []).map(o => {
+				const noteSafe = encodeURIComponent(o.note || "");
+				
+				// --- LOGIC TÍNH TOÁN (Giống bên Admin) ---
+				// Lấy số tiền đã hoàn lại (nếu có)
+				const returnedAmt = o.returned_amount || 0;
+				
+				// Tính doanh thu thực tế của đơn này
+				const realTotal = o.total_amount - returnedAmt;
+
+				// --- LOGIC HIỂN THỊ ---
+				// Nếu có hoàn tiền: Hiện thêm tag màu đỏ và đổi màu giá tiền
+				const refundTag = returnedAmt > 0 
+					? `<div class="text-[10px] text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded inline-block text-right mt-1 border border-red-100">↩ Đã hoàn: -${formatMoney(returnedAmt)}</div>` 
+					: '';
+				
+				const priceColor = returnedAmt > 0 ? "text-orange-600" : "text-blue-600";
+
+				return `
+				<div onclick="viewHistoryDetail(${o.id}, ${o.total_amount}, '${o.created_at}', '${noteSafe}')" 
+					 class="bg-white p-3 border rounded-xl shadow-sm flex justify-between items-center cursor-pointer hover:bg-blue-50 transition mb-2">
+					
+					<div class="flex items-center gap-3">
+						<div class="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold text-xs border border-gray-200">
+							#${o.id}
+						</div>
+						<div>
+							<div class="text-xs font-bold text-gray-700">${new Date(o.created_at || Date.now()).toLocaleString('vi-VN')}</div>
+							<div class="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1">
+								<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+								${o.staff_email ? o.staff_email.split('@')[0] : 'N/A'}
+							</div>
+						</div>
+					</div>
+
+					<div class="text-right flex flex-col items-end">
+						<div class="font-bold ${priceColor} text-lg font-display">${formatMoney(realTotal)}</div>
+						${refundTag}
+					</div>
+					
+				</div>`;
+			}).join('');
+		}
+
+		// --- LOGIC TRẢ HÀNG MỚI ---
+		let currentReturnItem = null; // Biến tạm lưu thông tin món hàng đang trả
+
+		async function viewHistoryDetail(id, totalCached, time, noteEncoded) {
+			document.getElementById('history-detail-panel').classList.remove('hidden');
+			document.getElementById('hist-detail-id').innerText = `Đơn hàng #${id}`;
+			document.getElementById('hist-detail-time').innerText = new Date(time).toLocaleString('vi-VN');
+
+			// 1. Tải thông tin đơn hàng mới nhất từ DB (để lấy số tiền đã hoàn)
+			// Dùng select single để lấy chính xác dòng đó
+			const { data: orderData } = await client
+				.from('orders')
+				.select('returned_amount, total_amount')
+				.eq('id', id)
+				.single();
+			
+			// Ưu tiên dùng dữ liệu mới từ DB, nếu lỗi thì dùng tạm dữ liệu cached
+			const currentTotal = orderData ? orderData.total_amount : totalCached;
+			const returnedAmt = orderData ? (orderData.returned_amount || 0) : 0;
+			const realRevenue = currentTotal - returnedAmt;
+
+			// 2. Xử lý phần ghi chú (Tiền khách đưa / Tiền thừa)
+			let received = 0, change = 0;
+			try { 
+				const noteDecoded = decodeURIComponent(noteEncoded); 
+				if(noteDecoded) { 
+					const extra = JSON.parse(noteDecoded); 
+					received = extra.received_money; 
+					change = extra.change_money; 
+				} 
+			} catch(e) {}
+
+			// 3. Render lại phần Footer (Tổng tiền, Hoàn tiền, Khách đưa...)
+			const footerHtml = `
+				<div class="flex justify-between text-sm">
+					<span class="text-gray-500">Tổng tiền ban đầu:</span>
+					<span class="font-bold text-gray-800">${formatMoney(currentTotal)}</span>
+				</div>
+
+				${returnedAmt > 0 ? `
+				<div class="flex justify-between text-sm text-red-600 bg-red-50 px-2 py-1 rounded border border-red-100 -mx-2">
+					<span class="font-bold">↩ Đã hoàn tiền:</span>
+					<span class="font-bold">-${formatMoney(returnedAmt)}</span>
+				</div>
+				<div class="flex justify-between text-sm pt-1 pb-1">
+					<span class="text-indigo-600 font-bold">💰 Doanh thu thực:</span>
+					<span class="font-bold text-indigo-700 text-lg">${formatMoney(realRevenue)}</span>
+				</div>
+				<div class="border-t border-gray-200 my-1"></div>
+				` : ''}
+
+				<div class="flex justify-between text-sm mt-1">
+					<span class="text-gray-500">Khách đưa:</span>
+					<span class="font-bold text-blue-600">${received ? formatMoney(received) : '---'}</span>
+				</div>
+				<div class="flex justify-between text-lg pt-2 border-t border-dashed border-gray-300 mt-2">
+					<span class="font-bold text-orange-600">Tiền thối lại:</span>
+					<span class="font-bold text-orange-600">${change ? formatMoney(change) : '---'}</span>
+				</div>
+			`;
+			
+			// Gán HTML vào khung footer
+			document.getElementById('hist-detail-footer').innerHTML = footerHtml;
+
+			// 4. Lấy danh sách sản phẩm (Logic cũ giữ nguyên)
+			const { data: items } = await client.from('order_items').select('*').eq('order_id', id);
+			
+			document.getElementById('hist-detail-items').innerHTML = items.map(i => {
+				let originalProd = null;
+				if (i.product_id) {
+					 originalProd = productsDB.find(p => p.id === i.product_id);
+				}
+				if (!originalProd) {
+					 originalProd = productsDB.find(p => p.name === i.product_name) || {};
+				}
+
+				const barcode = originalProd.barcode || '---';
+				const unit = originalProd.unit || 'Cái';
+				
+				const returned = i.returned_quantity || 0;
+				const canReturn = i.quantity - returned;
+				const isFullyReturned = canReturn <= 0;
+
+				const returnBtn = isFullyReturned 
+					? `<span class="text-[10px] bg-gray-200 text-gray-500 px-2 py-1 rounded font-bold">Đã trả hết</span>`
+					: `<button onclick="openReturnModal(${i.id}, '${i.product_name}', ${canReturn}, ${i.price}, ${originalProd.id || 'null'})" class="text-[10px] bg-red-50 text-red-600 border border-red-200 px-2 py-1 rounded font-bold hover:bg-red-100 active:scale-95">↩ Trả hàng</button>`;
+
+				const returnedInfo = returned > 0 ? `<div class="text-[10px] text-red-500 font-bold mt-0.5 bg-red-50 inline-block px-1 rounded border border-red-100">⚠️ Đã trả: ${returned}/${i.quantity}</div>` : '';
+
+				return `
+					<tr>
+						<td class="py-2">
+							<div class="font-bold text-gray-800">${i.product_name}</div>
+							<div class="text-[10px] text-gray-500">Mã: ${barcode} | ĐVT: ${unit}</div>
+							${returnedInfo}
+						</td>
+						<td class="text-right font-bold align-top py-2">x${i.quantity}</td>
+						<td class="text-right text-xs align-top py-2">
+							<div>${formatMoney(i.price)}</div>
+							<div class="mt-1">${returnBtn}</div>
+						</td>
+						<td class="text-right font-bold text-blue-600 align-top py-2">${formatMoney(i.total)}</td>
+					</tr>`;
+			}).join('');
+		}
+
+		// --- CÁC HÀM XỬ LÝ TRẢ HÀNG ---
+
+		function openReturnModal(itemId, name, maxQty, price, prodId) {
+			currentReturnItem = { itemId, name, maxQty, price, prodId };
+			
+			document.getElementById('return-modal').classList.remove('hidden');
+			document.getElementById('return-item-name').innerText = name;
+			document.getElementById('return-max-qty').innerText = maxQty;
+			
+			// Reset input về 1
+			const input = document.getElementById('return-qty-input');
+			input.value = 1;
+			input.max = maxQty;
+			
+			updateRefundAmount();
+		}
+
+		function closeReturnModal() {
+			document.getElementById('return-modal').classList.add('hidden');
+			currentReturnItem = null;
+		}
+
+		function adjustReturnQty(delta) {
+			const input = document.getElementById('return-qty-input');
+			let newVal = parseInt(input.value) + delta;
+			if (newVal < 1) newVal = 1;
+			if (newVal > currentReturnItem.maxQty) newVal = currentReturnItem.maxQty;
+			
+			input.value = newVal;
+			updateRefundAmount();
+		}
+
+		function updateRefundAmount() {
+			const qty = parseInt(document.getElementById('return-qty-input').value) || 0;
+			const total = qty * currentReturnItem.price;
+			document.getElementById('return-refund-amt').innerText = formatMoney(total);
+		}
+
+		// Hàm Xử Lý Logic Chính
+		async function confirmReturn() {
+			if (!currentReturnItem) return;
+			
+			const qtyToReturn = parseInt(document.getElementById('return-qty-input').value);
+			
+			// Validate
+			if (qtyToReturn <= 0 || qtyToReturn > currentReturnItem.maxQty) {
+				return showAlert("Lỗi", "Số lượng trả không hợp lệ!", "error");
+			}
+
+			// Xác nhận lần cuối
+			const refundMoney = formatMoney(qtyToReturn * currentReturnItem.price);
+			
+			closeReturnModal(); // Đóng modal nhập trước
+
+			showAlert("Xác nhận trả hàng", 
+				`Nhận lại <b>${qtyToReturn}</b> sản phẩm "${currentReturnItem.name}".<br>
+				 Hoàn tiền cho khách: <b class="text-red-600 text-xl">${refundMoney}</b>.<br><br>
+				 Kho hàng sẽ được tự động cộng thêm.`, 
+				"confirm", 
+				async () => {
+					try {
+						// 1. Cập nhật bảng order_items (Giữ nguyên code cũ)
+						const { data: currentItem } = await client.from('order_items').select('returned_quantity, order_id').eq('id', currentReturnItem.itemId).single();
+						const newReturnedQty = (currentItem.returned_quantity || 0) + qtyToReturn;
+						await client.from('order_items').update({ returned_quantity: newReturnedQty }).eq('id', currentReturnItem.itemId);
+
+						// 2. Cập nhật kho hàng (Giữ nguyên code cũ)
+						if (currentReturnItem.prodId) {
+							const prodInDb = productsDB.find(p => p.id === currentReturnItem.prodId);
+							if (prodInDb) {
+								const newStock = (prodInDb.quantity || 0) + qtyToReturn;
+								await client.from('products').update({ quantity: newStock }).eq('id', currentReturnItem.prodId);
+							}
+						}
+
+						// --- 3. MỚI: CẬP NHẬT DOANH THU ĐƠN HÀNG (orders) ---
+						// Tính số tiền vừa hoàn trả
+						const refundMoney = qtyToReturn * currentReturnItem.price;
+						const orderId = currentItem.order_id; // Lấy ID đơn hàng từ item
+
+						// Lấy số tiền đã hoàn trước đó của đơn hàng này
+						const { data: ord } = await client.from('orders').select('returned_amount').eq('id', orderId).single();
+						
+						// Cộng dồn tiền hoàn mới
+						const newTotalRefund = (ord.returned_amount || 0) + refundMoney;
+						
+						// Lưu ngược vào DB
+						await client.from('orders').update({ returned_amount: newTotalRefund }).eq('id', orderId);
+						// ----------------------------------------------------
+
+						showAlert("Thành công", "Đã trả hàng, nhập kho và trừ doanh thu!", "success");
+						
+						fetchProducts();
+						document.getElementById('history-detail-panel').classList.add('hidden');
+
+					} catch (err) {
+						console.error(err);
+						showAlert("Lỗi hệ thống", "Không thể cập nhật trả hàng: " + err.message, "error");
+					}
+				}
+			);
+		}
+
+		// Bắt sự kiện nhập tay vào ô số lượng để cập nhật tiền hoàn
+		document.getElementById('return-qty-input').addEventListener('input', function() {
+			let val = parseInt(this.value);
+			if(val > currentReturnItem.maxQty) this.value = currentReturnItem.maxQty;
+			if(val < 1) this.value = 1;
+			updateRefundAmount();
+		});
 
         // --- PRODUCT MODAL ---
         function openProductModal(id = null) {
@@ -2129,7 +2417,30 @@
 			} 
 		}
         function setMultiplier(n) { if(!isNaN(n) && n>0) { currentMultiplier = n; document.getElementById('multiplier-badge').classList.remove('hidden'); document.getElementById('multiplier-val').innerText = n; } }
-        async function loadRevenue() { const { data: orders } = await client.from('orders').select('*'); if(!orders) return; const today = new Date().toDateString(), thisMonth = new Date().getMonth(); let sumD=0, cntD=0, sumM=0, cntM=0; orders.forEach(o => { const d=new Date(o.created_at); if(d.toDateString()===today) {sumD+=o.total_amount; cntD++} if(d.getMonth()===thisMonth) {sumM+=o.total_amount; cntM++} }); document.getElementById('rev-today').innerText=formatMoney(sumD); document.getElementById('order-count-today').innerText=cntD+" đơn"; document.getElementById('rev-month').innerText=formatMoney(sumM); document.getElementById('order-count-month').innerText=cntM+" đơn"; }
+        async function loadRevenue() { 
+			const { data: orders } = await client.from('orders').select('*'); 
+			if(!orders) return; 
+			const today = new Date().toDateString(), thisMonth = new Date().getMonth(); 
+			let sumD=0, cntD=0, sumM=0, cntM=0; 
+			orders.forEach(o => { 
+				const d=new Date(o.created_at);
+				
+				const realRevenue = o.total_amount - (o.returned_amount || 0);
+				
+				if(d.toDateString() === today) {
+					sumD += realRevenue; // Cộng doanh thu thực
+					cntD++;
+				}
+				if(d.getMonth() === thisMonth) {
+					sumM += realRevenue; // Cộng doanh thu thực
+					cntM++;
+				} 
+			}); 
+			document.getElementById('rev-today').innerText=formatMoney(sumD); 
+			document.getElementById('order-count-today').innerText=cntD+" đơn"; 
+			document.getElementById('rev-month').innerText=formatMoney(sumM); 
+			document.getElementById('order-count-month').innerText=cntM+" đơn"; 
+		}
         
         function parkOrder() { if(cart.length>0) { parkedOrders.push({id:Date.now(), items:[...cart]}); localStorage.setItem('pos_parked_orders',JSON.stringify(parkedOrders)); cart=[]; updateParkedBadge(); updateCartUI(); document.getElementById('last-scanned-card').classList.add('hidden'); showAlert("Đã lưu", "Đơn hàng đã được lưu vào mục chờ.", 'info'); } }
         function showRecallModal() {
