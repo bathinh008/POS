@@ -13,6 +13,7 @@
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 	
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 	<!--<script src="https://unpkg.com/@zxing/library@latest"></script>-->
 	<script src="https://cdn.jsdelivr.net/npm/easyqrcodejs@4.5.0/dist/easy.qrcode.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -84,6 +85,36 @@
 			0% { transform: scale(0.8); }
 			50% { transform: scale(1.5); }
 			100% { transform: scale(1); }
+		}
+		
+		/* --- CẤU HÌNH IN HÓA ĐƠN (Đã canh lề chuẩn) --- */
+		@media print {
+			/* 1. Ẩn giao diện web */
+			body > * { display: none !important; }
+			
+			/* 2. Cấu hình khung hóa đơn */
+			#receipt-print-area { 
+				display: block !important; 
+				position: absolute; 
+				left: 0; 
+				top: 0; 
+				width: 100%; 
+				
+				/* --- CANH LỀ TẠI ĐÂY --- */
+				/* Padding: Trên/Dưới 0mm, Trái/Phải 3mm (hoặc 5mm tùy máy) */
+				padding: 0mm 5mm !important; 
+				
+				box-sizing: border-box; /* Giữ kích thước chuẩn không bị vỡ */
+				background: white;
+				color: black;
+				font-family: monospace; /* Font chữ đơn cách cho thẳng hàng số */
+			}
+
+			/* 3. Xóa lề mặc định của trình duyệt để ta tự kiểm soát */
+			@page { 
+				size: auto; 
+				margin: 0mm; /* Quan trọng: Đặt về 0 để không bị trình duyệt tự thêm lề trắng */
+			}
 		}
     </style>
 </head>
@@ -354,55 +385,76 @@
         </div>
 
         <div id="admin-revenue" class="hidden flex-1 flex flex-col overflow-hidden bg-gray-50 h-full">
-			<div class="p-4 grid grid-cols-2 gap-3 shrink-0">
-				<div class="bg-white p-4 rounded-2xl shadow-sm border border-indigo-50">
-					<p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Hôm nay</p>
-					<p class="text-xl font-bold text-indigo-700 mt-1 font-display truncate" id="rev-today">0đ</p>
-					<p id="order-count-today" class="text-[10px] text-indigo-400 mt-1 font-medium">0 đơn</p>
+    
+			<div id="revenue-classic-ui" class="flex flex-col h-full">
+				<div class="p-4 grid grid-cols-2 gap-3 shrink-0">
+					<div class="bg-white p-4 rounded-2xl shadow-sm border border-indigo-50">
+						<p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Hôm nay</p>
+						<p class="text-xl font-bold text-indigo-700 mt-1 font-display truncate" id="rev-today">0đ</p>
+						<p id="order-count-today" class="text-[10px] text-indigo-400 mt-1 font-medium">0 đơn</p>
+					</div>
+					<div class="bg-white p-4 rounded-2xl shadow-sm border border-purple-50">
+						<p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tháng này</p>
+						<p class="text-xl font-bold text-purple-700 mt-1 font-display truncate" id="rev-month">0đ</p>
+						<p id="order-count-month" class="text-[10px] text-purple-400 mt-1 font-medium">0 đơn</p>
+					</div>
 				</div>
-				<div class="bg-white p-4 rounded-2xl shadow-sm border border-purple-50">
-					<p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tháng này</p>
-					<p class="text-xl font-bold text-purple-700 mt-1 font-display truncate" id="rev-month">0đ</p>
-					<p id="order-count-month" class="text-[10px] text-purple-400 mt-1 font-medium">0 đơn</p>
-				</div>
-			</div>
 
-			<div class="flex-1 bg-white rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.05)] flex flex-col overflow-hidden border-t border-gray-100 mx-2">
+				<div class="flex-1 bg-white rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.05)] flex flex-col overflow-hidden border-t border-gray-100 mx-2">
+					<div class="p-4 border-b border-gray-100 z-10 bg-white">
+						<div class="flex items-center justify-between mb-3">
+							<h3 class="text-sm font-bold text-gray-800 flex items-center gap-2">📊 Chi tiết doanh số</h3>
+							<button onclick="loadRevenue(); viewRevenueDetail();" class="text-[10px] bg-gray-100 px-2 py-1 rounded text-gray-500 hover:bg-gray-200">🔄 Làm mới</button>
+						</div>
+						
+						<div class="flex gap-2 mb-3">
+							<div class="flex-1">
+								<label class="text-[9px] font-bold text-gray-400 block mb-1 uppercase">Từ ngày</label>
+								<input type="date" id="filter-start" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-indigo-500">
+							</div>
+							<div class="flex-1">
+								<label class="text-[9px] font-bold text-gray-400 block mb-1 uppercase">Đến ngày</label>
+								<input type="date" id="filter-end" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-indigo-500">
+							</div>
+							<div class="flex items-end">
+								<button onclick="viewRevenueDetail()" class="bg-indigo-600 text-white w-9 h-9 rounded-lg flex items-center justify-center shadow-md active:bg-indigo-700 transition-transform">🔍</button>
+							</div>
+						</div>
+
+						<div class="flex justify-between items-center bg-indigo-50 p-2.5 rounded-xl border border-indigo-100">
+							<span class="text-xs text-indigo-600 font-bold" id="filter-count">0 đơn hàng</span>
+							<span class="text-base font-bold text-indigo-700 font-display" id="filter-sum">0đ</span>
+						</div>
+						
+						<button onclick="exportRevenueReport()" class="w-full mt-2 text-[10px] text-emerald-600 font-bold border border-emerald-200 bg-emerald-50 py-2 rounded-lg hover:bg-emerald-100">📥 Xuất Excel</button>
+					</div>
+
+					<div id="revenue-list" class="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50 pb-20"></div>
+				</div>
+			</div> 
+			<div id="revenue-chart-ui" class="flex flex-col h-full hidden overflow-y-auto p-4 space-y-4 pb-20">
+				<div class="flex justify-between items-center">
+					<h3 class="font-bold text-gray-800 text-lg">Tổng Quan 📊</h3>
+					<button onclick="renderCharts()" class="text-xs bg-white border px-3 py-1.5 rounded-lg shadow-sm font-bold text-indigo-600">🔄 Làm mới</button>
+				</div>
+
+				<div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+					<h4 class="text-xs font-bold text-gray-400 uppercase mb-4">Doanh thu 7 ngày qua</h4>
+					<div class="h-48 relative w-full">
+						<canvas id="chart-revenue-7days"></canvas>
+					</div>
+				</div>
+
+				<div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+					<h4 class="text-xs font-bold text-gray-400 uppercase mb-4">Top 5 Sản phẩm bán chạy</h4>
+					<div class="h-48 relative w-full flex justify-center">
+						<canvas id="chart-top-products"></canvas>
+					</div>
+				</div>
 				
-				<div class="p-4 border-b border-gray-100 z-10 bg-white">
-					<div class="flex items-center justify-between mb-3">
-						<h3 class="text-sm font-bold text-gray-800 flex items-center gap-2">📊 Chi tiết doanh số</h3>
-						<button onclick="loadRevenue(); viewRevenueDetail();" class="text-[10px] bg-gray-100 px-2 py-1 rounded text-gray-500 hover:bg-gray-200">🔄 Làm mới</button>
-					</div>
-					
-					<div class="flex gap-2 mb-3">
-						<div class="flex-1">
-							<label class="text-[9px] font-bold text-gray-400 block mb-1 uppercase">Từ ngày</label>
-							<input type="date" id="filter-start" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-indigo-500">
-						</div>
-						<div class="flex-1">
-							<label class="text-[9px] font-bold text-gray-400 block mb-1 uppercase">Đến ngày</label>
-							<input type="date" id="filter-end" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-indigo-500">
-						</div>
-						<div class="flex items-end">
-							<button onclick="viewRevenueDetail()" class="bg-indigo-600 text-white w-9 h-9 rounded-lg flex items-center justify-center shadow-md active:bg-indigo-700 transition-transform">
-								🔍
-							</button>
-						</div>
-					</div>
-
-					<div class="flex justify-between items-center bg-indigo-50 p-2.5 rounded-xl border border-indigo-100">
-						<span class="text-xs text-indigo-600 font-bold" id="filter-count">0 đơn hàng</span>
-						<span class="text-base font-bold text-indigo-700 font-display" id="filter-sum">0đ</span>
-					</div>
-					
-					<button onclick="exportRevenueReport()" class="w-full mt-2 text-[10px] text-emerald-600 font-bold border border-emerald-200 bg-emerald-50 py-2 rounded-lg hover:bg-emerald-100">
-						📥 Xuất Excel (Theo ngày đã chọn)
-					</button>
-				</div>
-
-				<div id="revenue-list" class="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50 pb-20">
-					</div>
+				<button onclick="forceSwitchToClassic()" class="w-full bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold border border-indigo-100 text-sm">
+					📄 Xem danh sách chi tiết
+				</button>
 			</div>
 		</div>
 		
@@ -415,8 +467,19 @@
 				</div>
 		</div>
 		
-		<div id="admin-system" class="hidden flex-1 flex flex-col bg-gray-50 h-full p-4 space-y-4">
+		<div id="admin-system" class="hidden flex-1 flex flex-col bg-gray-50 h-full p-4 space-y-4 overflow-y-auto pb-20">
 			<div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+				<div class="flex justify-between items-center mb-4">
+					<div>
+						<h3 class="font-bold text-gray-800 text-lg">Giao diện Biểu đồ 📊</h3>
+						<p class="text-xs text-gray-500">Bật: Hiện biểu đồ. Tắt: Hiện số liệu cũ.</p>
+					</div>
+					<label class="relative inline-flex items-center cursor-pointer">
+						<input type="checkbox" id="sys-chart-toggle" class="sr-only peer">
+						<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+					</label>
+				</div>
+			
 				<div class="flex justify-between items-center mb-4">
 					<div>
 						<h3 class="font-bold text-gray-800 text-lg">Chế độ Bảo trì 🚧</h3>
@@ -428,9 +491,52 @@
 					</label>
 				</div>
 
-				<div class="space-y-2">
-					<label class="text-xs font-bold text-gray-500 uppercase">Thông báo hiển thị</label>
-					<textarea id="sys-message" rows="3" class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="Nhập lời nhắn cho nhân viên..."></textarea>
+				<div class="space-y-2 mb-4">
+					<label class="text-xs font-bold text-gray-500 uppercase">Thông báo bảo trì</label>
+					<textarea id="sys-message" rows="2" class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="Nhập lời nhắn cho nhân viên..."></textarea>
+				</div>
+
+				<div class="flex justify-between items-center mb-4">
+					<div>
+						<h3 class="font-bold text-gray-800 text-lg">Cho phép In hóa đơn 🖨️</h3>
+						<p class="text-xs text-gray-500">Hỏi "In hóa đơn?" sau khi thanh toán.</p>
+					</div>
+					<label class="relative inline-flex items-center cursor-pointer">
+						<input type="checkbox" id="sys-print-toggle" class="sr-only peer">
+						<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+					</label>
+				</div>
+
+				<div class="border-t my-4 pt-4">
+					<h3 class="font-bold text-gray-800 text-lg mb-3">Thông tin trên Hóa đơn 🧾</h3>
+					
+					<div class="space-y-3">
+						<div>
+							<label class="text-xs font-bold text-gray-500 uppercase">Tên Cửa Hàng</label>
+							<input type="text" id="sys-store-name" class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-1 focus:ring-blue-500 outline-none font-bold" placeholder="VD: Tạp Hóa Cô Ba">
+						</div>
+						
+						<div>
+							<label class="text-xs font-bold text-gray-500 uppercase">Địa chỉ</label>
+							<input type="text" id="sys-store-address" class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="VD: 123 Đường ABC, Quận 1">
+						</div>
+
+						<div class="mt-3">
+							<label class="text-xs font-bold text-gray-500 uppercase">Hotline / SĐT</label>
+							<input type="text" id="sys-store-hotline" class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-1 focus:ring-blue-500 outline-none font-bold" placeholder="VD: Hotline: 0909.999.888">
+						</div>
+
+						<div class="grid grid-cols-2 gap-3">
+							<div>
+								<label class="text-xs font-bold text-gray-500 uppercase">Lời chào cuối</label>
+								<input type="text" id="sys-footer" class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="Cảm ơn & Hẹn gặp lại!">
+							</div>
+							<div>
+								<label class="text-xs font-bold text-gray-500 uppercase">Thông tin Wifi</label>
+								<input type="text" id="sys-wifi" class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="Wifi: ... / Pass: ...">
+							</div>
+						</div>
+					</div>
 				</div>
 
 				<button onclick="saveSystemSettings()" class="mt-4 w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform">LƯU CÀI ĐẶT</button>
@@ -518,13 +624,15 @@
 		</div>
 		
 		<div class="flex-1 overflow-y-auto p-0">
-			<table class="w-full history-table">
-				<thead>
-					<tr>
-						<th>Tên SP / Mã</th>
-						<th class="text-right">SL</th>
-						<th class="text-right">Giá</th>
-						<th class="text-right">Tổng</th>
+			<table class="w-full history-table table-fixed"> <thead>
+					<tr class="text-gray-500 border-b">
+						<th class="w-[45%] text-left py-2 font-bold">Tên SP / Mã</th>
+						
+						<th class="w-[10%] text-right py-2 font-bold">SL</th>
+						
+						<th class="w-[20%] text-right py-2 font-bold">Giá</th>
+						
+						<th class="w-[25%] text-right py-2 font-bold">Tổng</th>
 					</tr>
 				</thead>
 				<tbody id="hist-detail-items"></tbody>
@@ -726,6 +834,57 @@
 			</div>
 		</div>
 	</div>
+	
+	<div id="receipt-print-area" class="hidden print:block bg-white text-black p-1 text-xs font-mono leading-tight">
+		<div class="text-center mb-2">
+			<h2 class="text-xl font-bold uppercase" id="rec-store-name">MINI POS</h2>
+			<p id="rec-address">123 Đường ABC, Quận XYZ</p>
+			<p id="rec-hotline">Hotline: 0909.123.456</p>
+			<p id="rec-is-copy" class="hidden font-bold text-[10px] mt-0.5">(BẢN SAO)</p>
+		</div>
+
+		<div class="border-b border-black border-dashed pb-1 mb-1">
+			<div class="flex justify-between"><span>Đơn:</span> <span id="rec-id" class="font-bold">#---</span></div>
+			<div class="flex justify-between"><span>Ngày:</span> <span id="rec-time">--/--/--</span></div>
+			<div class="flex justify-between"><span>NV:</span> <span id="rec-staff">---</span></div>
+		</div>
+
+		<div class="border-b border-black border-dashed pb-1 mb-1">
+			<table class="w-full text-left">
+				<thead>
+					<tr>
+						<th class="w-[45%]">Tên sản phẩm</th>
+						<th class="w-[15%] text-center">SL</th>
+						<th class="w-[20%] text-right">Giá</th>
+						<th class="w-[20%] text-right">Thành tiền</th>
+					</tr>
+				</thead>
+				<tbody id="rec-items-list">
+					</tbody>
+			</table>
+		</div>
+
+		<div class="flex justify-between font-bold text-sm mt-1">
+			<span>TỔNG CỘNG:</span>
+			<span id="rec-total">0đ</span>
+		</div>
+		
+		<div class="flex justify-between mt-1 text-[10px]">
+			<span>Khách đưa:</span>
+			<span id="rec-cash">0đ</span>
+		</div>
+		
+		<div class="flex justify-between mb-2 text-[10px]">
+			<span>Tiền thừa:</span>
+			<span id="rec-change">0đ</span>
+		</div>
+
+		<div class="text-center border-t border-black border-dashed pt-2">
+			<p class="italic" id="rec-footer-1">Cảm ơn & Hẹn gặp lại!</p>
+			
+			<p class="text-[10px] mt-1" id="rec-footer-2">Wifi: MiniPOS / Pass: 12345678</p>
+		</div>
+	</div>
     <script>
         const SUPABASE_URL = 'https://renqusdcczlhrglbclhe.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlbnF1c2RjY3psaHJnbGJjbGhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMTIyMzUsImV4cCI6MjA4MDU4ODIzNX0.kF960FS-VvAM2rkNo9kVHfmGAkpwrmlZ5Vf9-QFiC2E';
@@ -750,6 +909,18 @@
 		let lastScannedCode = null;
 		let lastScanTime = 0;
 		const SCAN_DELAY = 2000;
+		let globalSettings = { 
+			allow_print: true, 
+			enable_charts: true,
+			// Giá trị mặc định phòng khi chưa tải được
+			store_name: "CỬA HÀNG MINI POS",
+			store_address: "Hồ Chí Minh, Việt Nam",
+			receipt_footer: "Cảm ơn & Hẹn gặp lại!",
+			wifi_info: "Wifi: MiniPOS / Pass: 12345678",
+			store_hotline: "Hotline: 0909.123.456"
+		};
+		let myChart1 = null; 
+		let myChart2 = null;
 
 		// --- LOGIC KIỂM TRA GIÁ MỚI ---
 		let isCheckPriceMode = false;
@@ -868,7 +1039,8 @@
 					document.getElementById('login-screen').classList.add('hidden'); 
 					document.getElementById('scan-screen').classList.remove('hidden');
 					
-					fetchProducts(); 
+					fetchProducts();
+					fetchSystemSettings();
 					updateParkedBadge();
 					updateCartUI();
 					startHeartbeat();
@@ -1349,69 +1521,109 @@
 		}
         
         async function processPayment() {
-			// 1. Tính toán trước các con số
-			const t = cart.reduce((s, i) => s + (i.quantity * i.finalPrice), 0); // Tổng tiền hàng
-			const r = parseInt(document.getElementById('money-received').value) || 0; // Tiền khách đưa
+			// 1. Tính toán số liệu
+			const t = cart.reduce((s, i) => s + (i.quantity * i.finalPrice), 0);
+			const inputVal = document.getElementById('money-received').value;
+			const r = parseInt(inputVal) || 0;
 
-			// --- LOGIC MỚI: KIỂM TRA TIỀN THIẾU ---
+			// Kiểm tra tiền thiếu
 			if (r < t) {
 				const missing = t - r;
-				// Báo lỗi và DỪNG HÀM NGAY LẬP TỨC (return)
-				return showAlert("Thiếu tiền", `Khách đưa thiếu ${formatMoney(missing)}. Vui lòng thu đủ tiền trước khi thanh toán!`, 'error');
+				return showAlert("Thiếu tiền", `Khách đưa thiếu ${formatMoney(missing)}. Vui lòng thu đủ tiền!`, 'error');
 			}
-			// ---------------------------------------
 
-			// 2. Nếu đủ tiền thì mới hiện popup xác nhận và xử lý database
+			// 2. Xác nhận thanh toán
 			showAlert("Thanh toán", "Xác nhận thanh toán đơn hàng này?", 'confirm', async () => {
-    
-				// 1. Tạo đơn hàng (Giữ nguyên logic cũ)
+				
+				// --- BẮT ĐẦU XỬ LÝ LƯU DB ---
 				const extra = { received_money: r, change_money: r - t };
+				
+				// A. Tạo đơn hàng
 				const { data: order, error } = await client.from('orders').insert({ 
-					staff_email: currentUserEmail, total_amount: t, note: JSON.stringify(extra) 
+					staff_email: currentUserEmail, 
+					total_amount: t, 
+					note: JSON.stringify(extra),
+					returned_amount: 0 
 				}).select().single();
 
 				if (order) {
-					// 2. Lưu chi tiết đơn hàng (Giữ nguyên)
+					// B. Lưu chi tiết món
 					const items = cart.map(i => ({ 
 						order_id: order.id, 
-						product_id: i.id,
+						product_id: i.id, // Lưu ID để sau này trả hàng cho chuẩn
 						product_name: i.name, 
 						quantity: i.quantity, 
 						price: i.finalPrice, 
 						total: i.quantity * i.finalPrice,
-						returned_quantity: 0 // Mặc định là 0
+						returned_quantity: 0
 					}));
 					await client.from('order_items').insert(items);
 
-					// 3. --- MỚI: TRỪ TỒN KHO ---
-					// Chạy vòng lặp qua từng món trong giỏ để cập nhật
+					// C. Trừ tồn kho
 					const updatePromises = cart.map(item => {
-						// Tìm sản phẩm gốc trong DB để lấy số lượng hiện tại
 						const originalProd = productsDB.find(p => p.id === item.id);
 						if (!originalProd) return null;
-
-						// Tính tồn kho mới (Không cho âm)
 						const newQty = Math.max(0, (originalProd.quantity || 0) - item.quantity);
-						
-						// Gửi lệnh update lên Supabase
 						return client.from('products').update({ quantity: newQty }).eq('id', item.id);
 					});
-
-					// Đợi tất cả lệnh update chạy xong
 					await Promise.all(updatePromises);
-				}
 
-				// 4. Dọn dẹp & Làm mới dữ liệu
-				cart = []; 
-				updateCartUI(); 
-				document.getElementById('last-scanned-card').classList.add('hidden');
-				showAlert("Thành công", "Đơn hàng đã lưu & Đã trừ kho!", 'success');
-				
-				// QUAN TRỌNG: Tải lại danh sách sản phẩm để cập nhật số lượng mới về máy
-				fetchProducts(); 
-				
-				backToScan();
+					// --- QUAN TRỌNG: CHUẨN BỊ DỮ LIỆU IN TRƯỚC KHI XÓA GIỎ ---
+					// Copy giỏ hàng hiện tại ra một biến riêng để in
+					const printData = {
+						id: order.id,
+						time: new Date(),
+						staff: currentUserEmail,
+						items: [...cart], // Copy lại danh sách món
+						total: t,
+						received: r,
+						change: r - t
+					};
+
+					// D. Xử lý In & Dọn dẹp
+					// Kiểm tra cấu hình: Có cho phép in không?
+					if (globalSettings.allow_print) {
+						showAlert(
+							"Thanh toán thành công ✅", 
+							`Đơn hàng #${order.id} đã được lưu.<br>Bạn có muốn in hóa đơn không?`, 
+							'confirm', 
+							() => {
+								// Nếu bấm Đồng ý -> In hóa đơn
+								printReceipt(
+									printData.id, 
+									printData.time, 
+									printData.staff, 
+									printData.items, 
+									printData.total, 
+									printData.received, 
+									printData.change
+								);
+								// In xong mới dọn dẹp
+								finishOrder();
+							},
+							// Nếu bấm Hủy (Không in) -> Cũng phải dọn dẹp để bán đơn mới
+							() => {
+								finishOrder();
+							}
+						);
+					} else {
+						// Nếu tắt chế độ in -> Dọn dẹp luôn
+						showAlert("Thành công", "Đơn hàng đã lưu & Đã trừ kho!", 'success');
+						finishOrder();
+					}
+				}
 			});
+		}
+
+		// Hàm dọn dẹp (tách ra để dùng chung)
+		function finishOrder() {
+			cart = []; // Xóa giỏ hàng
+			updateCartUI(); 
+			document.getElementById('last-scanned-card').classList.add('hidden');
+			document.getElementById('money-received').value = ''; // Xóa ô tiền khách đưa
+			calculateChange(); // Reset tiền thừa về 0
+			fetchProducts(); // Cập nhật lại tồn kho mới nhất từ server
+			backToScan(); // Quay về màn hình bán
 		}
 
 		// --- HÀM XỬ LÝ PHÍM ENTER KHI ĐĂNG NHẬP ---
@@ -1474,23 +1686,44 @@
 			
 			// Logic riêng cho Tab Doanh thu
 			else if (t === 'revenue') {
-				loadRevenue(); // Tải tổng quan (Cards)
-				
-				// Tự động chọn ngày hôm nay & tải chi tiết (Chỉ làm nếu ô input chưa có dữ liệu)
+				// 1. Tải số liệu tổng quan (Cards trên cùng)
+				loadRevenue(); 
+
+				// 2. [QUAN TRỌNG] Khai báo 2 biến giao diện (BẠN ĐANG THIẾU ĐOẠN NÀY)
+				const classicUI = document.getElementById('revenue-classic-ui');
+				const chartUI = document.getElementById('revenue-chart-ui');
+
+				// 3. Tự động chọn ngày hôm nay (Giữ nguyên code của bạn)
 				const dateInput = document.getElementById('filter-start');
 				if (dateInput && !dateInput.value) {
 					const today = new Date().toISOString().split('T')[0];
 					document.getElementById('filter-start').value = today;
 					document.getElementById('filter-end').value = today;
 					
-					// Cập nhật cả cho phần export cũ (nếu còn dùng)
 					if(document.getElementById('report-start')) {
 						 document.getElementById('report-start').value = today;
 						 document.getElementById('report-end').value = today;
 					}
 				}
 
-				viewRevenueDetail(); // Gọi hàm tải danh sách chi tiết
+				// 4. Kiểm tra cài đặt để chuyển đổi giao diện
+				// (Thêm kiểm tra 'classicUI' và 'chartUI' tồn tại để tránh lỗi null)
+				if (globalSettings.enable_charts && classicUI && chartUI) {
+					// == CHẾ ĐỘ BIỂU ĐỒ ==
+					classicUI.classList.add('hidden');
+					chartUI.classList.remove('hidden');
+					
+					// Gọi hàm vẽ biểu đồ
+					// (Kiểm tra hàm tồn tại trước khi gọi để tránh crash nếu chưa copy hàm renderCharts)
+					if (typeof renderCharts === 'function') renderCharts(); 
+				} else {
+					// == CHẾ ĐỘ CŨ (HOẶC FALLBACK) ==
+					if(chartUI) chartUI.classList.add('hidden');
+					if(classicUI) classicUI.classList.remove('hidden');
+					
+					// loadRevenue(); <--- XÓA DÒNG NÀY (Vì đã gọi ở dòng đầu tiên rồi, gọi lại bị thừa)
+					viewRevenueDetail(); 
+				}
 			}
 			
 			else if (t === 'system') {
@@ -1501,6 +1734,146 @@
 			else if (t === 'products') {
 				// fetchProducts(); // Bật dòng này nếu muốn mỗi lần bấm vào tab Hàng hóa là tải lại danh sách
 			}
+		}
+		
+		// 2. THÊM HÀM MỚI: VẼ BIỂU ĐỒ
+		async function renderCharts() {
+			// Hủy biểu đồ cũ nếu có
+			if (myChart1) { myChart1.destroy(); myChart1 = null; }
+			if (myChart2) { myChart2.destroy(); myChart2 = null; }
+
+			const end = new Date();
+			const start = new Date();
+			start.setDate(end.getDate() - 6); // Lùi lại 6 ngày
+
+			// --- SỬA LỖI: Lấy cả biến 'error' để kiểm tra ---
+			const { data: orders, error } = await client
+				.from('orders')
+				.select('created_at, total_amount, returned_amount, order_items(product_name, quantity)')
+				.gte('created_at', start.toISOString())
+				.order('created_at', { ascending: true });
+
+			// 1. NẾU CÓ LỖI TỪ SUPABASE -> BÁO NGAY
+			if (error) {
+				console.error("Lỗi tải biểu đồ:", error);
+				// Nếu lỗi là do chưa liên kết bảng
+				if (error.message.includes("Could not find a relationship")) {
+					 showAlert("Lỗi Cấu Trúc", "Thiếu liên kết khóa ngoại giữa bảng 'orders' và 'order_items'.<br>Vui lòng chạy lại lệnh SQL tạo khóa ngoại.", 'error');
+				} else {
+					 showAlert("Lỗi Dữ Liệu", "Không thể tải dữ liệu biểu đồ: " + error.message, 'error');
+				}
+				return;
+			}
+
+			if (!orders || orders.length === 0) {
+				// Không có đơn hàng thì thôi, không vẽ
+				return;
+			}
+
+			// --- XỬ LÝ SỐ LIỆU BIỂU ĐỒ 1: DOANH THU 7 NGÀY ---
+			const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+			let labels = [];
+			let dataRevenue = [];
+
+			for (let i = 0; i < 7; i++) {
+				let d = new Date(start);
+				d.setDate(start.getDate() + i);
+				let dayName = days[d.getDay()];
+				
+				labels.push(`${dayName} (${d.getDate()}/${d.getMonth()+1})`);
+				
+				let sum = orders
+					.filter(o => new Date(o.created_at).toDateString() === d.toDateString())
+					.reduce((acc, cur) => acc + (cur.total_amount - (cur.returned_amount || 0)), 0);
+				dataRevenue.push(sum);
+			}
+
+			// --- VẼ BIỂU ĐỒ 1 ---
+			const canvas1 = document.getElementById('chart-revenue-7days');
+			if (canvas1) {
+				const ctx1 = canvas1.getContext('2d');
+				myChart1 = new Chart(ctx1, {
+					type: 'line',
+					data: {
+						labels: labels,
+						datasets: [{
+							label: 'Doanh thu',
+							data: dataRevenue,
+							borderColor: '#4f46e5',
+							backgroundColor: 'rgba(79, 70, 229, 0.1)',
+							borderWidth: 2,
+							tension: 0.3,
+							fill: true,
+							pointBackgroundColor: '#fff',
+							pointBorderColor: '#4f46e5',
+							pointRadius: 4
+						}]
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: { legend: { display: false } },
+						scales: { y: { beginAtZero: true } }
+					}
+				});
+			}
+
+			// --- XỬ LÝ SỐ LIỆU BIỂU ĐỒ 2: TOP SẢN PHẨM ---
+			let productCounts = {};
+			orders.forEach(o => {
+				// Kiểm tra kỹ o.order_items có tồn tại không trước khi lặp
+				if (o.order_items && Array.isArray(o.order_items)) {
+					o.order_items.forEach(item => {
+						if (item.product_name && !item.product_name.startsWith('[Đã trả]')) {
+							productCounts[item.product_name] = (productCounts[item.product_name] || 0) + item.quantity;
+						}
+					});
+				}
+			});
+
+			let sortedProducts = Object.entries(productCounts)
+				.sort((a, b) => b[1] - a[1])
+				.slice(0, 5);
+
+			// --- VẼ BIỂU ĐỒ 2 ---
+			const canvas2 = document.getElementById('chart-top-products');
+			if (canvas2 && sortedProducts.length > 0) {
+				const ctx2 = canvas2.getContext('2d');
+				myChart2 = new Chart(ctx2, {
+					type: 'doughnut',
+					data: {
+						labels: sortedProducts.map(p => p[0]),
+						datasets: [{
+							data: sortedProducts.map(p => p[1]),
+							backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+							borderWidth: 0
+						}]
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: { 
+							legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } 
+						}
+					}
+				});
+			}
+		}
+
+		// Hàm phụ trợ: Nút "Xem danh sách chi tiết" trong màn hình biểu đồ
+		function forceSwitchToClassic() {
+			// Tạm thời ẩn biểu đồ, hiện danh sách
+			document.getElementById('revenue-chart-ui').classList.add('hidden');
+			document.getElementById('revenue-classic-ui').classList.remove('hidden');
+			
+			// Load dữ liệu bảng cũ
+			const today = new Date().toISOString().split('T')[0];
+			if(!document.getElementById('filter-start').value) {
+				document.getElementById('filter-start').value = today;
+				document.getElementById('filter-end').value = today;
+			}
+			loadRevenue();
+			viewRevenueDetail();
 		}
 		
 		// Tải danh sách User
@@ -2141,24 +2514,24 @@
 		let currentReturnItem = null; // Biến tạm lưu thông tin món hàng đang trả
 
 		async function viewHistoryDetail(id, totalCached, time, noteEncoded) {
+			currentHistoryOrderId = id; 
+
 			document.getElementById('history-detail-panel').classList.remove('hidden');
 			document.getElementById('hist-detail-id').innerText = `Đơn hàng #${id}`;
 			document.getElementById('hist-detail-time').innerText = new Date(time).toLocaleString('vi-VN');
 
-			// 1. Tải thông tin đơn hàng mới nhất từ DB (để lấy số tiền đã hoàn)
-			// Dùng select single để lấy chính xác dòng đó
+			// 1. Tải thông tin đơn hàng mới nhất từ DB
 			const { data: orderData } = await client
 				.from('orders')
 				.select('returned_amount, total_amount')
 				.eq('id', id)
 				.single();
 			
-			// Ưu tiên dùng dữ liệu mới từ DB, nếu lỗi thì dùng tạm dữ liệu cached
 			const currentTotal = orderData ? orderData.total_amount : totalCached;
 			const returnedAmt = orderData ? (orderData.returned_amount || 0) : 0;
 			const realRevenue = currentTotal - returnedAmt;
 
-			// 2. Xử lý phần ghi chú (Tiền khách đưa / Tiền thừa)
+			// 2. Xử lý ghi chú
 			let received = 0, change = 0;
 			try { 
 				const noteDecoded = decodeURIComponent(noteEncoded); 
@@ -2169,7 +2542,10 @@
 				} 
 			} catch(e) {}
 
-			// 3. Render lại phần Footer (Tổng tiền, Hoàn tiền, Khách đưa...)
+			// 3. --- QUAN TRỌNG: PHẢI TẢI DANH SÁCH MÓN (items) TRƯỚC ---
+			const { data: items } = await client.from('order_items').select('*').eq('order_id', id);
+
+			// 4. --- SAU ĐÓ MỚI TẠO FOOTER (VÌ NÚT IN CẦN BIẾN items) ---
 			const footerHtml = `
 				<div class="flex justify-between text-sm">
 					<span class="text-gray-500">Tổng tiền ban đầu:</span>
@@ -2196,14 +2572,17 @@
 					<span class="font-bold text-orange-600">Tiền thối lại:</span>
 					<span class="font-bold text-orange-600">${change ? formatMoney(change) : '---'}</span>
 				</div>
+
+				<button onclick="printHistoryOrder(${id}, '${time}', '${encodeURIComponent(JSON.stringify(items))}', ${currentTotal}, ${received}, ${change})" 
+						class="w-full mt-3 bg-gray-800 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform">
+					🖨️ IN HÓA ĐƠN
+				</button>
 			`;
 			
 			// Gán HTML vào khung footer
 			document.getElementById('hist-detail-footer').innerHTML = footerHtml;
 
-			// 4. Lấy danh sách sản phẩm (Logic cũ giữ nguyên)
-			const { data: items } = await client.from('order_items').select('*').eq('order_id', id);
-			
+			// 5. Hiển thị danh sách món (Code cũ)
 			document.getElementById('hist-detail-items').innerHTML = items.map(i => {
 				let originalProd = null;
 				if (i.product_id) {
@@ -2222,7 +2601,7 @@
 
 				const returnBtn = isFullyReturned 
 					? `<span class="text-[10px] bg-gray-200 text-gray-500 px-2 py-1 rounded font-bold">Đã trả hết</span>`
-					: `<button onclick="openReturnModal(${i.id}, '${i.product_name}', ${canReturn}, ${i.price}, ${originalProd.id || 'null'})" class="text-[10px] bg-red-50 text-red-600 border border-red-200 px-2 py-1 rounded font-bold hover:bg-red-100 active:scale-95">↩ Trả hàng</button>`;
+					: `<button onclick="openReturnModal(${i.id}, '${i.product_name}', ${canReturn}, ${i.price}, ${originalProd ? originalProd.id : 'null'})" class="text-[10px] bg-red-50 text-red-600 border border-red-200 px-2 py-1 rounded font-bold hover:bg-red-100 active:scale-95">↩ Trả hàng</button>`;
 
 				const returnedInfo = returned > 0 ? `<div class="text-[10px] text-red-500 font-bold mt-0.5 bg-red-50 inline-block px-1 rounded border border-red-100">⚠️ Đã trả: ${returned}/${i.quantity}</div>` : '';
 
@@ -2599,25 +2978,77 @@
 		
 		// --- SYSTEM SETTINGS ---
 		async function fetchSystemSettings() {
-			const { data, error } = await client.from('app_settings').select('*').eq('id', 1).single();
+			const { data } = await client.from('app_settings').select('*').eq('id', 1).single();
 			if (data) {
+				// Lưu vào biến toàn cục
+				globalSettings.allow_print = data.allow_print;
+				globalSettings.enable_charts = data.enable_charts;
+				globalSettings.store_name = data.store_name || "CỬA HÀNG MINI POS";
+				globalSettings.store_address = data.store_address || "";
+				globalSettings.store_hotline = data.store_hotline || "";
+				globalSettings.receipt_footer = data.receipt_footer || "";
+				globalSettings.wifi_info = data.wifi_info || "";
+
+				// Đổ dữ liệu vào ô input trong tab Cài đặt
 				document.getElementById('sys-maintenance-toggle').checked = data.maintenance_mode;
+				document.getElementById('sys-print-toggle').checked = data.allow_print;
+				document.getElementById('sys-chart-toggle').checked = data.enable_charts;
 				document.getElementById('sys-message').value = data.maintenance_message;
+
+				// --- PHẦN MỚI ---
+				document.getElementById('sys-store-name').value = data.store_name || "";
+				document.getElementById('sys-store-address').value = data.store_address || "";
+				document.getElementById('sys-store-hotline').value = data.store_hotline || "";
+				document.getElementById('sys-footer').value = data.receipt_footer || "";
+				document.getElementById('sys-wifi').value = data.wifi_info || "";
 			}
 		}
 
 		async function saveSystemSettings() {
-			const mode = document.getElementById('sys-maintenance-toggle').checked;
-			const msg = document.getElementById('sys-message').value.trim() || "Hệ thống đang bảo trì.";
+			const maintMode = document.getElementById('sys-maintenance-toggle').checked;
+			const printMode = document.getElementById('sys-print-toggle').checked;
+			const chartMode = document.getElementById('sys-chart-toggle').checked;
+			const msg = document.getElementById('sys-message').value.trim();
 
-			showAlert("Lưu cài đặt", `Bạn muốn ${mode ? 'BẬT' : 'TẮT'} chế độ bảo trì?`, 'confirm', async () => {
+			// --- LẤY DỮ LIỆU TỪ INPUT MỚI ---
+			const sName = document.getElementById('sys-store-name').value.trim();
+			const sAddr = document.getElementById('sys-store-address').value.trim();
+			const sHotline = document.getElementById('sys-store-hotline').value.trim();
+			const sFoot = document.getElementById('sys-footer').value.trim();
+			const sWifi = document.getElementById('sys-wifi').value.trim();
+
+			showAlert("Lưu cài đặt", `Xác nhận cập nhật cấu hình hệ thống?`, 'confirm', async () => {
 				const { error } = await client.from('app_settings').update({
-					maintenance_mode: mode,
-					maintenance_message: msg
+					maintenance_mode: maintMode,
+					maintenance_message: msg,
+					allow_print: printMode,
+					enable_charts: chartMode,
+					// --- CẬP NHẬT CỘT MỚI ---
+					store_name: sName,
+					store_address: sAddr,
+					store_hotline: sHotline,
+					receipt_footer: sFoot,
+					wifi_info: sWifi
 				}).eq('id', 1);
 
-				if (error) showAlert("Lỗi", error.message, 'error');
-				else showAlert("Thành công", "Đã cập nhật cấu hình hệ thống.", 'success');
+				if (error) {
+					showAlert("Lỗi", error.message, 'error');
+				} else {
+					// Cập nhật ngay vào biến bộ nhớ
+					globalSettings.allow_print = printMode;
+					globalSettings.enable_charts = chartMode;
+					globalSettings.store_name = sName;
+					globalSettings.store_address = sAddr;
+					globalSettings.store_hotline = sHotline;
+					globalSettings.receipt_footer = sFoot;
+					globalSettings.wifi_info = sWifi;
+
+					if(!document.getElementById('admin-revenue').classList.contains('hidden')){
+						switchAdminTab('revenue');
+					}
+					
+					showAlert("Thành công", "Đã cập nhật cấu hình hệ thống.", 'success');
+				}
 			});
 		}
 		
@@ -2822,6 +3253,92 @@
 
 		// Gọi hàm khởi tạo ngay khi script chạy (hoặc nhét vào checkSession)
 		setTimeout(initScanSettings, 500);
+		
+		// HÀM IN HÓA ĐƠN
+		function printReceipt(orderId, time, staff, items, total, received, change, isCopy = false) {
+			// 1. ĐIỀN THÔNG TIN TỪ CẤU HÌNH (THAY VÌ CỨNG)
+			document.getElementById('rec-store-name').innerText = globalSettings.store_name || "CỬA HÀNG MINI POS"; 
+			document.getElementById('rec-address').innerText = globalSettings.store_address || "";
+			document.getElementById('rec-hotline').innerText = globalSettings.store_hotline || "";
+			
+			// --- XỬ LÝ BẢN SAO (MỚI) ---
+			const copyLabel = document.getElementById('rec-is-copy');
+			if (isCopy) {
+				// Nếu là in lại -> Hiện chữ COPY
+				copyLabel.classList.remove('hidden');
+			} else {
+				// Nếu là in mới -> Ẩn chữ COPY (reset trạng thái cũ)
+				copyLabel.classList.add('hidden');
+			}
+			
+			// Cập nhật phần chân trang
+			document.getElementById('rec-footer-1').innerText = globalSettings.receipt_footer || "Cảm ơn quý khách!";
+			document.getElementById('rec-footer-2').innerText = globalSettings.wifi_info || "";
+
+			document.getElementById('rec-id').innerText = "#" + orderId;
+			document.getElementById('rec-time').innerText = new Date(time).toLocaleString('vi-VN');
+			document.getElementById('rec-staff').innerText = staff ? staff.split('@')[0] : 'Admin';
+			
+			const listEl = document.getElementById('rec-items-list');
+			
+			// --- PHẦN TIÊU ĐỀ BẢNG (THEAD) ---
+			// Ép cứng độ rộng và căn lề cho tiêu đề
+			const headerHtml = `
+				<thead>
+					<tr class="border-b border-black border-dashed">
+						<th class="w-[40%] text-left pb-1">Tên SP / Mã</th>
+						<th class="w-[15%] text-center pb-1">SL</th>
+						<th class="w-[20%] text-right pb-1">Giá</th>
+						<th class="w-[25%] text-right pb-1">Thành tiền</th>
+					</tr>
+				</thead>
+			`;
+
+			// --- PHẦN NỘI DUNG (TBODY) ---
+			const bodyHtml = items.map(i => {
+				let name = i.product_name || i.name; 
+				let code = i.barcode || i.item_code;
+				
+				// Tìm mã nếu thiếu
+				if (!code) {
+					 const p = productsDB.find(x => x.id === i.product_id) || productsDB.find(x => x.name === name);
+					 if (p) code = p.barcode || p.item_code;
+				}
+				const codeDisplay = code ? `${code}` : '';
+
+				return `
+				<tr>
+					<td class="align-top pr-1 font-bold pt-1" colspan="4">${name}</td>
+				</tr>
+				<tr class="border-b border-dashed border-gray-300">
+					<td class="text-[11px] align-top pt-0 pb-1 w-[40%]">${codeDisplay}</td>
+					
+					<td class="text-center align-top pt-0 pb-1 w-[15%] font-bold">x${i.quantity}</td>
+					
+					<td class="text-right align-top pt-0 pb-1 w-[20%]">${formatMoney(i.price).replace('₫','')}₫</td>
+					
+					<td class="text-right align-top font-bold pt-0 pb-1 w-[25%]">${formatMoney(i.total || (i.price*i.quantity)).replace('₫','')}₫</td>
+				</tr>
+				`;
+			}).join('');
+
+			// Gán lại HTML trọn bộ (bao gồm cả thead mới sửa)
+			document.querySelector('#receipt-print-area table').innerHTML = headerHtml + `<tbody id="rec-items-list">${bodyHtml}</tbody>`;
+
+			// Điền tổng tiền
+			document.getElementById('rec-total').innerText = formatMoney(total);
+			document.getElementById('rec-cash').innerText = received ? formatMoney(received) : "---";
+			document.getElementById('rec-change').innerText = change ? formatMoney(change) : "---";
+
+			setTimeout(() => { window.print(); }, 300); 
+		}
+		
+		// Hàm wrapper để gọi in từ lịch sử
+		function printHistoryOrder(id, time, itemsJson, total, received, change) {
+			const items = JSON.parse(decodeURIComponent(itemsJson));
+			// Staff lấy từ thông tin hiện tại hoặc phải lưu vào history nếu muốn chính xác người bán cũ
+			printReceipt(id, time, currentUserEmail, items, total, received, change, true);
+		}
     </script>
 	<script>
 		// Đăng ký PWA Service Worker
