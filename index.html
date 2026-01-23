@@ -121,7 +121,94 @@
 				margin: 0mm; /* Quan trọng: Đặt về 0 để không bị trình duyệt tự thêm lề trắng */
 			}
 		}
-    </style>
+
+		/* =========================================
+		   GIAO DIỆN QUÉT MINIMALIST (THEO ẢNH)
+		   ========================================= */
+
+		#scan-focus-box {
+			position: absolute;
+			z-index: 50;
+			pointer-events: none;
+
+			/* Kích thước mặc định */
+			width: 260px;
+			height: 260px;
+
+			/* Căn giữa màn hình */
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			
+			/* Hiệu ứng di chuyển mượt */
+			transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+			
+			/* Overlay tối xung quanh: Giữ nguyên để làm nổi bật khung trắng */
+			
+		}
+
+		/* --- ĐỊNH DẠNG 4 GÓC (THEO ẢNH MẪU) --- */
+		.border-corner {
+			position: absolute;
+			width: 60px;  /* Độ dài cạnh ngang */
+			height: 60px; /* Độ dài cạnh dọc */
+			
+			/* Màu trắng hơi đục nhẹ cho dịu mắt (giống trong hình chụp qua cam) */
+			border: 6px solid rgba(255, 255, 255, 0.9); 
+			
+			/* Bo góc khung: Tạo cảm giác mềm mại */
+			border-radius: 5px; 
+			
+			/* Đổ bóng nhẹ để nổi bật trên nền sáng */
+			filter: drop-shadow(0 0 4px rgba(0,0,0,0.2));
+		}
+
+		/* --- VỊ TRÍ & CẮT CẠNH TỪNG GÓC --- */
+
+		/* Góc Trái Trên */
+		.tl { 
+			top: 0; left: 0; 
+			border-right: none; 
+			border-bottom: none; 
+			border-top-left-radius: 15px; /* Bo cong nhiều hơn ở đỉnh */
+		}
+
+		/* Góc Phải Trên */
+		.tr { 
+			top: 0; right: 0; 
+			border-left: none; 
+			border-bottom: none; 
+			border-top-right-radius: 15px; 
+		}
+
+		/* Góc Trái Dưới */
+		.bl { 
+			bottom: 0; left: 0; 
+			border-right: none; 
+			border-top: none; 
+			border-bottom-left-radius: 15px; 
+		}
+
+		/* Góc Phải Dưới */
+		.br { 
+			bottom: 0; right: 0; 
+			border-left: none; 
+			border-top: none; 
+			border-bottom-right-radius: 15px; 
+		}
+
+		/* --- HIỆU ỨNG KHI BẮT ĐƯỢC MÃ --- */
+		#scan-focus-box.active-capture {
+			/* Khi bắt được mã, khung co lại một chút và đổi màu xanh nhẹ */
+			transform: translate(-50%, -50%) scale(0.95);
+			box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+		}
+
+		#scan-focus-box.active-capture .border-corner {
+			border-color: #4ade80; /* Chuyển sang màu xanh lá (Green-400) */
+			transition: border-color 0.2s;
+		}
+	</style>
 </head>
 
 <body class="h-screen overflow-hidden flex flex-col">
@@ -225,10 +312,19 @@
 
         <div class="relative bg-black flex-1 flex flex-col items-center justify-center overflow-hidden group w-full">
     
-			<div id="reader" class="w-full h-full absolute inset-0 z-0"></div>
+			<div id="reader" class="w-full h-full absolute inset-0 z-0 bg-black overflow-hidden">
+				<video id="scan-video" class="w-full h-full object-cover" autoplay playsinline muted></video>
+				<canvas id="scan-canvas" class="absolute inset-0 w-full h-full pointer-events-none opacity-0"></canvas>
+			</div>
 
-			<video id="scan-video" class="w-full h-full object-cover" autoplay playsinline muted></video>
-			<canvas id="scan-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+			<div id="scan-focus-box" class="idle-state hidden">
+				<div class="border-corner tl"></div>
+				<div class="border-corner tr"></div>
+				<div class="border-corner bl"></div>
+				<div class="border-corner br"></div>
+				<div class="scan-laser"></div>
+				<div class="scan-crosshair"></div>
+			</div>
 
 			<button id="btn-stop-cam" onclick="stopScanner()" class="hidden absolute top-4 right-4 z-40 bg-black/50 text-white p-2 rounded-full border border-white/30 backdrop-blur-md hover:bg-red-600 transition">
 				<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -237,6 +333,13 @@
 			<div id="multiplier-badge" 
 				 class="hidden absolute top-10 inset-x-0 mx-auto w-fit z-30 bg-red-600 text-white px-4 py-1 rounded-full font-bold shadow-lg border border-white animate-bounce">
 				Số lượng: x<span id="multiplier-val">1</span><span> Sản phẩm</span>
+			</div>
+
+			<div id="scan-focus-box" class="idle-state hidden">
+				<div class="border-corner tl"></div>
+				<div class="border-corner tr"></div>
+				<div class="border-corner bl"></div>
+				<div class="border-corner br"></div>
 			</div>
 
 			<div id="camera-placeholder" class="z-20 text-center absolute">
@@ -1188,8 +1291,11 @@
             
             // 2. Ẩn giao diện chờ
             document.getElementById('camera-placeholder').classList.add('hidden');
-            const btnStop = document.getElementById('btn-stop-cam');
-            if(btnStop) btnStop.classList.remove('hidden');
+            
+            if (currentScanMode === 'default') {
+				const btnStop = document.getElementById('btn-stop-cam');
+				if(btnStop) btnStop.classList.remove('hidden');
+			}
 
             const videoEl = document.getElementById('scan-video');
             const canvasEl = document.getElementById('scan-canvas');
@@ -1202,79 +1308,83 @@
 
                 // 4. Mở Camera (Full HD để bắt mã vạch tốt hơn)
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { 
-                        facingMode: "environment",
-                        width: { ideal: 1920 }, 
-                        height: { ideal: 1080 },
-                        focusMode: "continuous" // Hỗ trợ Android lấy nét
-                    }
-                });
-                
-                scanStream = stream;
-                videoEl.srcObject = stream;
-                await videoEl.play();
-                isScanning = true;
+					video: { 
+						facingMode: "environment",
+						width: { ideal: 1920 }, 
+						height: { ideal: 1080 },
+						focusMode: "continuous"
+					}
+				});
+				
+				scanStream = stream;
+				videoEl.srcObject = stream;
+				await videoEl.play();
+				isScanning = true;
+
+				// Kiểm tra kỹ trước khi gọi để tránh lỗi null
+				const focusBoxEl = document.getElementById('scan-focus-box');
+				const guideTextEl = document.getElementById('scan-guide-text');
+
+				if (focusBoxEl) focusBoxEl.classList.remove('hidden');
+				if (guideTextEl) guideTextEl.classList.remove('hidden');
 
                 // 5. Vòng lặp quét (Loop)
+                // Biến timer để reset về giữa khi mất dấu mã
+                let resetTimer = null;
+
+                // --- VÒNG LẶP QUÉT ---
                 const renderLoop = async () => {
-                    if (!isScanning || videoEl.paused || videoEl.ended) return;
+					if (!isScanning || videoEl.paused || videoEl.ended) return;
 
-                    // Vẽ lại canvas để khớp kích thước video
-                    if (canvasEl.width !== videoEl.videoWidth) {
-                        canvasEl.width = videoEl.videoWidth;
-                        canvasEl.height = videoEl.videoHeight;
-                    }
+					try {
+						const codes = await detector.detect(videoEl);
+						const focusBox = document.getElementById('scan-focus-box');
+						
+						if (codes.length > 0) {
+							const code = codes[0]; 
 
-                    try {
-                        const codes = await detector.detect(videoEl);
-                        
-                        // Xóa khung vẽ cũ
-                        ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+							// 1. Chỉ đổi màu (Thêm class active-capture)
+							if (focusBox) {
+								focusBox.classList.remove('idle-state');
+								focusBox.classList.add('active-capture');
+							}
 
-                        if (codes.length > 0) {
-                            const code = codes[0]; // Lấy mã đầu tiên
-                            
-                            // Vẽ khung đỏ bao quanh mã
-                            const { x, y, width, height } = code.boundingBox;
-                            ctx.strokeStyle = "#00ff00"; // Màu xanh lá
-                            ctx.lineWidth = 4;
-                            ctx.strokeRect(x, y, width, height);
+							// 2. Xử lý nghiệp vụ (Thêm giỏ hàng / Check giá)
+							const currentTime = Date.now();
+							if (code.rawValue !== lastScannedCode || (currentTime - lastScanTime > 1000)) {
+								lastScannedCode = code.rawValue;
+								lastScanTime = currentTime;
+								
+								if (typeof playBeepSound === "function") playBeepSound();
+								
+								// Logic xử lý mã
+								if (typeof isCheckPriceMode !== 'undefined' && isCheckPriceMode) {
+									processCheckPrice(code.rawValue);
+								} else {
+									try { addToCart(code.rawValue); } catch (e) {}
+								}
 
-                            // --- LOGIC XỬ LÝ KẾT QUẢ (BẢN SỬA LỖI) ---
-                            const currentTime = Date.now();
-                            
-                            // Chống quét lặp lại (Debounce 1.5 giây)
-                            if (code.rawValue !== lastScannedCode || (currentTime - lastScanTime > 1500)) {
-                                lastScannedCode = code.rawValue;
-                                lastScanTime = currentTime;
-                                
-                                // 1. Phát tiếng bíp (Quan trọng để biết máy đã nhận)
-                                if (typeof playBeepSound === "function") {
-                                    playBeepSound();
-                                }
+								// Nếu dùng nút Toggle thì tự tắt cam
+								if (typeof currentScanMode !== 'undefined' && currentScanMode === 'toggle') {
+									stopScanner();
+									return;
+								}
+							}
+						} 
+						else {
+							// Không thấy mã -> Trả về màu trắng
+							if (focusBox) {
+								focusBox.classList.add('idle-state');
+								focusBox.classList.remove('active-capture');
+							}
+						}
 
-                                console.log("Đã bắt mã:", code.rawValue);
+					} catch (err) {
+						// Bỏ qua lỗi
+					}
 
-                                // 2. Bắn thẳng vào hàm xử lý tùy theo chế độ
-                                if (typeof isCheckPriceMode !== 'undefined' && isCheckPriceMode) {
-                                    // Nếu đang ở chế độ xem giá -> Gọi hàm xem giá
-                                    processCheckPrice(code.rawValue);
-                                } else {
-                                    // Nếu đang bán hàng -> Gọi hàm thêm giỏ hàng
-                                    try {
-                                        addToCart(code.rawValue);
-                                    } catch (err) {
-                                        console.error("Lỗi xử lý:", err);
-                                    }
-                                }
-                            }
-                        }
-                    } catch (err) {
-                        // Lỗi detect thường do camera chưa load xong frame, có thể bỏ qua
-                    }
-
-                    requestAnimationFrame(renderLoop);
-                };
+					requestAnimationFrame(renderLoop);
+				};
 
                 renderLoop();
 
@@ -1311,6 +1421,24 @@
                 scanStream = null;
             }
 
+			const focusBox = document.getElementById('scan-focus-box');
+            const guideText = document.getElementById('scan-guide-text');
+
+			// --- THÊM ĐOẠN NÀY VÀO CUỐI HÀM stopScanner ---
+			const toggleBtn = document.getElementById('toggle-scan-btn');
+			if (toggleBtn) {
+				toggleBtn.classList.remove('bg-red-600', 'animate-pulse');
+				toggleBtn.classList.add('bg-blue-600');
+			}
+
+            if(focusBox) {
+                focusBox.classList.add('hidden'); // <--- Quan trọng
+                focusBox.classList.add('idle-state');
+                focusBox.classList.remove('active-capture');
+                focusBox.style = "";
+            }
+            if(guideText) guideText.classList.add('hidden');
+
             const videoEl = document.getElementById('scan-video');
             if (videoEl) videoEl.srcObject = null;
 
@@ -1324,8 +1452,6 @@
             // Cập nhật UI
             if (currentScanMode === 'default') {
                 document.getElementById('camera-placeholder').classList.remove('hidden'); 
-            } else {
-                document.getElementById('camera-placeholder').classList.add('hidden');
             }
             document.getElementById('btn-stop-cam').classList.add('hidden');
         }
@@ -3271,43 +3397,126 @@
 
 		function createToggleButton() {
 			const btn = document.createElement('button');
+			
+			// --- THÊM ID ĐỂ DỄ QUẢN LÝ ---
+			btn.id = 'toggle-scan-btn'; 
+			// -----------------------------
+
 			btn.className = "w-14 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center text-2xl shadow-lg active:scale-90 transition-transform shrink-0";
+			
 			btn.innerHTML = `
 				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7">
 				  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
 				  <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75zM16.5 19.5h.75v.75h-.75v-.75z" />
 				</svg>
 			`;
+			
 			btn.onclick = () => {
-				if (html5QrcodeScanner && html5QrcodeScanner.isScanning) stopScanner();
-				else startScanner();
+				if (isScanning) {
+					stopScanner();
+					// Việc đổi màu sẽ do hàm stopScanner lo
+				} else {
+					startScanner();
+					// Bật lên thì đổi màu đỏ ngay tại đây
+					btn.classList.remove('bg-blue-600');
+					btn.classList.add('bg-red-600', 'animate-pulse');
+					
+					// Ẩn nút Stop to
+					const btnStop = document.getElementById('btn-stop-cam');
+					if(btnStop) btnStop.classList.add('hidden');
+				}
 			};
 			return btn;
 		}
 
 		function createHoldButton() {
 			const btn = document.createElement('button');
-			btn.className = "w-14 h-12 rounded-xl bg-orange-500 text-white flex items-center justify-center text-2xl shadow-lg active:scale-90 transition-transform shrink-0 select-none touch-none";
-			btn.innerHTML = "👆";
+			let holdTimer = null; // Biến lưu bộ đếm giờ
+			const HOLD_DELAY = 300; // Thời gian phải giữ (ms) để tính là "Giữ" (0.3 giây)
+
+			// Style
+			btn.className = "w-14 h-12 rounded-xl bg-orange-500 text-white flex items-center justify-center text-2xl shadow-lg transition-all shrink-0 select-none touch-none";
 			
-			const start = (e) => { 
-				if(e.cancelable) e.preventDefault(); 
-				startScanner(); 
-				btn.classList.add('scale-110', 'bg-orange-600'); 
-			};
-			const stop = (e) => { 
-				if(e.cancelable) e.preventDefault(); 
-				stopScanner(); 
-				btn.classList.remove('scale-110', 'bg-orange-600'); 
+			// CSS chặn chọn văn bản/menu
+			btn.style.webkitUserSelect = "none";
+			btn.style.userSelect = "none";
+			btn.style.webkitTouchCallout = "none";
+
+			btn.innerHTML = "👆";
+
+			// --- HÀM KÍCH HOẠT (Chạy sau khi đã giữ đủ lâu) ---
+			const activateScanner = () => {
+				if (!isScanning) {
+					startScanner();
+					
+					// Hiệu ứng Visual: Nút lún sâu, đổi màu đỏ, viền sáng
+					btn.classList.add('scale-90', 'bg-red-600', 'ring-4', 'ring-red-300', 'shadow-inner');
+					btn.innerHTML = "📷"; // Đổi icon cho sinh động
+					
+					// Ẩn nút Stop to
+					const btnStop = document.getElementById('btn-stop-cam');
+					if(btnStop) btnStop.classList.add('hidden');
+
+					// Rung nhẹ 1 cái để báo hiệu đã bật
+					if (navigator.vibrate) navigator.vibrate(100);
+				}
 			};
 
-			btn.addEventListener('touchstart', start, { passive: false });
-			btn.addEventListener('touchend', stop);
-			btn.addEventListener('mousedown', start);
-			btn.addEventListener('mouseup', stop);
-			btn.addEventListener('mouseleave', () => {
-				if (html5QrcodeScanner && html5QrcodeScanner.isScanning) stop();
-			});
+			// --- HÀM TẮT (Chạy khi buông tay) ---
+			const deactivateScanner = () => {
+				// 1. Nếu đang quét thì tắt ngay
+				if (isScanning) {
+					stopScanner();
+				}
+				
+				// 2. Reset giao diện nút về ban đầu
+				btn.classList.remove('scale-90', 'bg-red-600', 'ring-4', 'ring-red-300', 'shadow-inner');
+				btn.innerHTML = "👆";
+			};
+
+			// --- XỬ LÝ SỰ KIỆN ---
+
+			// 1. KHI BẮT ĐẦU CHẠM (START)
+			const handleStart = (e) => {
+				if (e.cancelable && e.type === 'touchstart') e.preventDefault();
+
+				// Hiệu ứng "Đang nhấn" nhẹ (để biết nút nhận lệnh)
+				btn.classList.add('opacity-80', 'scale-95');
+
+				// BẮT ĐẦU ĐẾM GIỜ
+				holdTimer = setTimeout(() => {
+					activateScanner(); // Hết giờ thì bật Camera
+				}, HOLD_DELAY);
+			};
+
+			// 2. KHI BUÔNG TAY HOẶC KÉO RA NGOÀI (STOP)
+			const handleStop = (e) => {
+				// Reset hiệu ứng "Đang nhấn"
+				btn.classList.remove('opacity-80', 'scale-95');
+
+				// QUAN TRỌNG NHẤT: Xóa bộ đếm giờ
+				// Nếu bạn buông tay trước 300ms, dòng này sẽ hủy lệnh activateScanner
+				// => Camera sẽ KHÔNG bao giờ bật.
+				if (holdTimer) {
+					clearTimeout(holdTimer);
+					holdTimer = null;
+				}
+
+				deactivateScanner();
+			};
+
+			// Gán sự kiện Touch (Điện thoại)
+			btn.addEventListener('touchstart', handleStart, { passive: false });
+			btn.addEventListener('touchend', handleStop);
+			btn.addEventListener('touchcancel', handleStop);
+
+			// Gán sự kiện Mouse (Máy tính)
+			btn.addEventListener('mousedown', handleStart);
+			btn.addEventListener('mouseup', handleStop);
+			btn.addEventListener('mouseleave', handleStop);
+
+			// Chặn menu chuột phải
+			btn.oncontextmenu = (e) => { e.preventDefault(); return false; };
 
 			return btn;
 		}
