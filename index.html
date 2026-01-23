@@ -1235,14 +1235,38 @@
                             ctx.lineWidth = 4;
                             ctx.strokeRect(x, y, width, height);
 
-                            // --- LOGIC XỬ LÝ KẾT QUẢ ---
+                            // --- LOGIC XỬ LÝ KẾT QUẢ (ĐÃ SỬA) ---
                             const currentTime = Date.now();
+                            
                             // Chống quét lặp lại (Debounce 2 giây)
                             if (code.rawValue !== lastScannedCode || (currentTime - lastScanTime > SCAN_DELAY)) {
                                 lastScannedCode = code.rawValue;
                                 lastScanTime = currentTime;
                                 
                                 playBeepSound();
+
+                                // --- BƯỚC 1: ĐIỀN MÃ VÀO Ô INPUT ĐỂ HIỂN THỊ ---
+                                // Kiểm tra xem đang ở chế độ nào để điền đúng ô
+                                let activeInput;
+                                if (typeof isCheckPriceMode !== 'undefined' && isCheckPriceMode) {
+                                    activeInput = document.getElementById('check-price-input');
+                                } else {
+                                    activeInput = document.getElementById('manual-input');
+                                }
+
+                                if (activeInput) {
+                                    activeInput.value = code.rawValue;
+                                    
+                                    // Hiệu ứng nháy xanh ô input để báo đã nhận
+                                    activeInput.classList.add('bg-green-100', 'text-green-800');
+                                    setTimeout(() => {
+                                        activeInput.classList.remove('bg-green-100', 'text-green-800');
+                                        // Tự động xóa ô input sau khi xử lý xong (tùy chọn)
+                                        activeInput.value = ''; 
+                                    }, 1000);
+                                }
+
+                                // --- BƯỚC 2: GỬI DỮ LIỆU ĐI XỬ LÝ ---
                                 addToCart(code.rawValue);
                             }
                         }
