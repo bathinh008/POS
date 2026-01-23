@@ -1248,43 +1248,24 @@
                                 lastScannedCode = code.rawValue;
                                 lastScanTime = currentTime;
                                 
-                                playBeepSound();
+                                // 1. Phát tiếng bíp (Quan trọng để biết máy đã nhận)
+                                if (typeof playBeepSound === "function") {
+                                    playBeepSound();
+                                }
 
-                                // 1. Xác định ô Input đang hoạt động (Bán hàng hoặc Check giá)
-                                let activeInput = null;
+                                console.log("Đã bắt mã:", code.rawValue);
+
+                                // 2. Bắn thẳng vào hàm xử lý tùy theo chế độ
                                 if (typeof isCheckPriceMode !== 'undefined' && isCheckPriceMode) {
-                                    activeInput = document.getElementById('check-price-input');
+                                    // Nếu đang ở chế độ xem giá -> Gọi hàm xem giá
+                                    processCheckPrice(code.rawValue);
                                 } else {
-                                    activeInput = document.getElementById('manual-input');
-                                }
-
-                                // 2. Nếu tìm thấy ô Input -> Điền dữ liệu và tạo hiệu ứng
-                                if (activeInput) {
-                                    console.log("Đã điền mã:", code.rawValue); // Kiểm tra log (F12)
-                                    
-                                    activeInput.value = code.rawValue;
-                                    activeInput.focus(); // Focus vào ô để thấy con trỏ
-                                    
-                                    // Thêm hiệu ứng nháy vàng để dễ nhìn thấy
-                                    const oldBg = activeInput.style.backgroundColor;
-                                    activeInput.style.transition = "background-color 0.2s";
-                                    activeInput.style.backgroundColor = "#fef08a"; // Màu vàng nhạt
-                                    
-                                    // Sau 0.5s thì trả lại màu cũ (KHÔNG XÓA TEXT)
-                                    setTimeout(() => {
-                                        activeInput.style.backgroundColor = oldBg || "";
-                                        // Lưu ý: Mình đã bỏ dòng activeInput.value = '' để bạn nhìn thấy mã
-                                    }, 500);
-                                } else {
-                                    console.error("Không tìm thấy ô nhập liệu (Input)!");
-                                }
-
-                                // 3. Gửi dữ liệu đi xử lý (Thêm vào giỏ hàng)
-                                try {
-                                    addToCart(code.rawValue);
-                                } catch (err) {
-                                    console.error("Lỗi thêm giỏ hàng:", err);
-                                    showAlert("Lỗi", "Mã đọc được nhưng không thêm được: " + err.message, "error");
+                                    // Nếu đang bán hàng -> Gọi hàm thêm giỏ hàng
+                                    try {
+                                        addToCart(code.rawValue);
+                                    } catch (err) {
+                                        console.error("Lỗi xử lý:", err);
+                                    }
                                 }
                             }
                         }
