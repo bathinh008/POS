@@ -14,6 +14,11 @@
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 	
 	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<script type="module">
+		import { BarcodeDetector } from "https://cdn.jsdelivr.net/npm/barcode-detector@2/dist/es/index.min.js";
+		// Gán vào window để dùng được ở các hàm bên dưới
+		window.BarcodeDetectorPolyfill = BarcodeDetector; 
+	</script>
 	<!--<script src="https://unpkg.com/@zxing/library@latest"></script>-->
 	<script src="https://cdn.jsdelivr.net/npm/easyqrcodejs@4.5.0/dist/easy.qrcode.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -1297,6 +1302,23 @@
                 showAlert("Lỗi Camera", "Không thể truy cập camera. Vui lòng cấp quyền hoặc thử lại.", 'error');
                 stopScanner();
             }
+        }
+
+		function playBeepSound() {
+            // Tạo âm thanh bíp ngắn bằng AudioContext (Không cần file mp3)
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.type = "sine"; // Âm thanh dạng sóng sin (bíp nhẹ)
+            oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime); // Tần số 1000Hz
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Âm lượng nhỏ
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1); // Kêu trong 0.1 giây
         }
 
         async function stopScanner() {
@@ -3407,11 +3429,6 @@
 					.catch(err => console.log('Lỗi PWA:', err));
 			});
 		}
-	</script>
-	<script type="module">
-		import { BarcodeDetector } from "https://cdn.jsdelivr.net/npm/barcode-detector@2/dist/es/index.min.js";
-		// Gán vào window để dùng được ở các hàm bên dưới
-		window.BarcodeDetectorPolyfill = BarcodeDetector; 
 	</script>
 </body>
 </html>
