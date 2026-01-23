@@ -121,6 +121,71 @@
 				margin: 0mm; /* Quan trọng: Đặt về 0 để không bị trình duyệt tự thêm lề trắng */
 			}
 		}
+		
+		/* --- ZALO STYLE DYNAMIC FOCUS --- */
+
+		/* 1. Cái khung chính */
+		#scan-focus-box {
+			position: absolute;
+			z-index: 20;
+			pointer-events: none;
+			
+			/* Hiệu ứng chuyển động mượt khi khung thay đổi kích thước/vị trí */
+			transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+			
+			/* Tạo lớp phủ tối xung quanh khung (Mask Trick) */
+			box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.5); 
+		}
+
+		/* 2. Trạng thái chờ (Nằm giữa màn hình) */
+		.idle-state {
+			top: 50% !important;
+			left: 50% !important;
+			width: 280px !important;
+			height: 280px !important;
+			transform: translate(-50%, -50%);
+			border: 1px solid rgba(255, 255, 255, 0.2); /* Viền mờ khi chờ */
+		}
+
+		/* 3. Thiết kế 4 góc trắng (Bo tròn giống ảnh) */
+		.corner {
+			position: absolute;
+			width: 40px;
+			height: 40px;
+			border: 4px solid white; /* Màu trắng Zalo */
+			border-radius: 4px;      /* Độ bo góc nhẹ */
+			box-shadow: 0 0 4px rgba(0,0,0,0.2); /* Bóng nhẹ cho nổi */
+		}
+
+		/* Định vị 4 góc và xóa các cạnh thừa để tạo hình chữ L */
+		.tl { top: -2px; left: -2px; border-right: none; border-bottom: none; border-top-left-radius: 16px; }
+		.tr { top: -2px; right: -2px; border-left: none; border-bottom: none; border-top-right-radius: 16px; }
+		.bl { bottom: -2px; left: -2px; border-right: none; border-top: none; border-bottom-left-radius: 16px; }
+		.br { bottom: -2px; right: -2px; border-left: none; border-top: none; border-bottom-right-radius: 16px; }
+
+		/* 4. Tia Laser quét dọc */
+		.laser-line {
+			position: absolute;
+			width: 100%;
+			height: 2px;
+			background: linear-gradient(90deg, transparent, #22c55e, transparent); /* Xanh lá hoặc Trắng */
+			top: 50%;
+			opacity: 0.6;
+			animation: scanMove 2s infinite linear;
+		}
+
+		@keyframes scanMove {
+			0% { top: 10%; opacity: 0; }
+			50% { opacity: 1; }
+			100% { top: 90%; opacity: 0; }
+		}
+
+		/* Khi bắt trúng mã: Khung đổi màu xanh lá */
+		.active-lock .corner {
+			border-color: #22c55e !important; /* Xanh lá xác nhận */
+			transform: scale(1.05); /* Phóng to nhẹ */
+			transition: border-color 0.2s;
+		}
     </style>
 </head>
 
@@ -228,7 +293,23 @@
 			<div id="reader" class="w-full h-full absolute inset-0 z-0"></div>
 
 			<video id="scan-video" class="w-full h-full object-cover" autoplay playsinline muted></video>
-			<canvas id="scan-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+    
+			<div id="overlay-mask" class="absolute inset-0 z-10 transition-colors duration-300"></div>
+
+			<div id="scan-focus-box" class="idle-state">
+				<div class="corner tl"></div>
+				<div class="corner tr"></div>
+				<div class="corner bl"></div>
+				<div class="corner br"></div>
+				
+				<div class="laser-line"></div>
+			</div>
+
+			<div id="scan-guide-text" class="absolute bottom-20 left-0 right-0 text-center z-20 pointer-events-none">
+				<span class="text-white text-sm bg-black/40 px-4 py-2 rounded-full backdrop-blur-md">
+					Di chuyển camera để tìm mã
+				</span>
+			</div>
 
 			<button id="btn-stop-cam" onclick="stopScanner()" class="hidden absolute top-4 right-4 z-40 bg-black/50 text-white p-2 rounded-full border border-white/30 backdrop-blur-md hover:bg-red-600 transition">
 				<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -282,7 +363,7 @@
 					</div>
 
 					<div class="grid grid-cols-2 gap-3">
-						<button onclick="voidTransaction()" class="bg-red-50 text-red-600 py-3.5 rounded-xl font-bold text-xs hover:bg-red-100 transition-colors">🗑 HỦY ĐƠN</button>
+						<button onclick="voidTransaction()" class="bg-red-50 text-red-600 py-3.5 rounded-xl font-bold text-xs hover:bg-red-100 transition-colors">🗑 HỦY GIAO DỊCH</button>
 						<button onclick="parkOrder()" class="bg-orange-50 text-orange-600 py-3.5 rounded-xl font-bold text-xs hover:bg-orange-100 transition-colors">⏸ HOÃN GIAO DỊCH</button>
 					</div>
 				</div>
@@ -1215,62 +1296,85 @@
                 await videoEl.play();
                 isScanning = true;
 
-                // 5. Vòng lặp quét (Loop)
+                // Biến để đếm ngược thời gian reset khung về giữa
+                let idleTimeout = null;
+
                 const renderLoop = async () => {
                     if (!isScanning || videoEl.paused || videoEl.ended) return;
 
-                    // Vẽ lại canvas để khớp kích thước video
-                    if (canvasEl.width !== videoEl.videoWidth) {
-                        canvasEl.width = videoEl.videoWidth;
-                        canvasEl.height = videoEl.videoHeight;
-                    }
-
                     try {
                         const codes = await detector.detect(videoEl);
-                        
-                        // Xóa khung vẽ cũ
-                        ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+                        const focusBox = document.getElementById('scan-focus-box');
+                        const guideText = document.getElementById('scan-guide-text');
 
                         if (codes.length > 0) {
-                            const code = codes[0]; // Lấy mã đầu tiên
-                            
-                            // Vẽ khung đỏ bao quanh mã
+                            const code = codes[0]; 
                             const { x, y, width, height } = code.boundingBox;
-                            ctx.strokeStyle = "#00ff00"; // Màu xanh lá
-                            ctx.lineWidth = 4;
-                            ctx.strokeRect(x, y, width, height);
 
-                            // --- LOGIC XỬ LÝ KẾT QUẢ (BẢN SỬA LỖI) ---
+                            // --- TÍNH TOÁN TỈ LỆ (SCALE) ---
+                            // Vì video render kích thước khác với độ phân giải thực tế
+                            // Ta phải tính tỉ lệ co giãn để vẽ khung cho đúng
+                            const scaleX = videoEl.clientWidth / videoEl.videoWidth;
+                            const scaleY = videoEl.clientHeight / videoEl.videoHeight;
+
+                            // Tọa độ trên màn hình = Tọa độ video * Tỉ lệ
+                            // Thêm một chút padding (10px) để khung rộng hơn mã một xíu cho đẹp
+                            const padding = 20;
+                            const finalWidth = (width * scaleX) + padding;
+                            const finalHeight = (height * scaleY) + padding;
+                            const finalX = (x * scaleX) - (padding / 2);
+                            const finalY = (y * scaleY) - (padding / 2);
+
+                            // --- CẬP NHẬT CSS CHO KHUNG BAY ĐẾN MÃ ---
+                            if (focusBox) {
+                                // Xóa class idle để cho phép JS điều khiển vị trí
+                                focusBox.classList.remove('idle-state');
+                                focusBox.classList.add('active-lock'); // Đổi màu xanh
+                                
+                                // Gán tọa độ trực tiếp
+                                focusBox.style.transform = 'none'; // Bỏ căn giữa
+                                focusBox.style.left = `${finalX}px`;
+                                focusBox.style.top = `${finalY}px`;
+                                focusBox.style.width = `${finalWidth}px`;
+                                focusBox.style.height = `${finalHeight}px`;
+                                
+                                // Ẩn chữ hướng dẫn cho đỡ rối
+                                if(guideText) guideText.style.opacity = '0';
+                            }
+
+                            // --- LOGIC XỬ LÝ KẾT QUẢ (GIỮ NGUYÊN) ---
                             const currentTime = Date.now();
-                            
-                            // Chống quét lặp lại (Debounce 1.5 giây)
                             if (code.rawValue !== lastScannedCode || (currentTime - lastScanTime > 1500)) {
                                 lastScannedCode = code.rawValue;
                                 lastScanTime = currentTime;
                                 
-                                // 1. Phát tiếng bíp (Quan trọng để biết máy đã nhận)
-                                if (typeof playBeepSound === "function") {
-                                    playBeepSound();
-                                }
-
+                                if (typeof playBeepSound === "function") playBeepSound();
                                 console.log("Đã bắt mã:", code.rawValue);
 
-                                // 2. Bắn thẳng vào hàm xử lý tùy theo chế độ
                                 if (typeof isCheckPriceMode !== 'undefined' && isCheckPriceMode) {
-                                    // Nếu đang ở chế độ xem giá -> Gọi hàm xem giá
                                     processCheckPrice(code.rawValue);
                                 } else {
-                                    // Nếu đang bán hàng -> Gọi hàm thêm giỏ hàng
-                                    try {
-                                        addToCart(code.rawValue);
-                                    } catch (err) {
-                                        console.error("Lỗi xử lý:", err);
-                                    }
+                                    try { addToCart(code.rawValue); } catch (err) {}
                                 }
                             }
+
+                            // Reset bộ đếm: Nếu mất mã thì 0.5s sau mới quay về giữa
+                            if(idleTimeout) clearTimeout(idleTimeout);
+                            idleTimeout = setTimeout(() => {
+                                if(focusBox) {
+                                    focusBox.classList.add('idle-state'); // Quay về giữa
+                                    focusBox.classList.remove('active-lock');
+                                    // Xóa style inline để class CSS có tác dụng
+                                    focusBox.style = ""; 
+                                    if(guideText) guideText.style.opacity = '1';
+                                }
+                            }, 500);
+
+                        } else {
+                            // Không thấy mã (Code xử lý trong setTimeout ở trên để tránh giật)
                         }
                     } catch (err) {
-                        // Lỗi detect thường do camera chưa load xong frame, có thể bỏ qua
+                        // console.error(err); 
                     }
 
                     requestAnimationFrame(renderLoop);
