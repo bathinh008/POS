@@ -1235,39 +1235,52 @@
                             ctx.lineWidth = 4;
                             ctx.strokeRect(x, y, width, height);
 
-                            // --- LOGIC XỬ LÝ KẾT QUẢ (ĐÃ SỬA) ---
+                            // --- LOGIC XỬ LÝ KẾT QUẢ (BẢN SỬA LỖI) ---
                             const currentTime = Date.now();
                             
-                            // Chống quét lặp lại (Debounce 2 giây)
-                            if (code.rawValue !== lastScannedCode || (currentTime - lastScanTime > SCAN_DELAY)) {
+                            // Chống quét lặp lại (Debounce 1.5 giây)
+                            if (code.rawValue !== lastScannedCode || (currentTime - lastScanTime > 1500)) {
                                 lastScannedCode = code.rawValue;
                                 lastScanTime = currentTime;
                                 
                                 playBeepSound();
 
-                                // --- BƯỚC 1: ĐIỀN MÃ VÀO Ô INPUT ĐỂ HIỂN THỊ ---
-                                // Kiểm tra xem đang ở chế độ nào để điền đúng ô
-                                let activeInput;
+                                // 1. Xác định ô Input đang hoạt động (Bán hàng hoặc Check giá)
+                                let activeInput = null;
                                 if (typeof isCheckPriceMode !== 'undefined' && isCheckPriceMode) {
                                     activeInput = document.getElementById('check-price-input');
                                 } else {
                                     activeInput = document.getElementById('manual-input');
                                 }
 
+                                // 2. Nếu tìm thấy ô Input -> Điền dữ liệu và tạo hiệu ứng
                                 if (activeInput) {
-                                    activeInput.value = code.rawValue;
+                                    console.log("Đã điền mã:", code.rawValue); // Kiểm tra log (F12)
                                     
-                                    // Hiệu ứng nháy xanh ô input để báo đã nhận
-                                    activeInput.classList.add('bg-green-100', 'text-green-800');
+                                    activeInput.value = code.rawValue;
+                                    activeInput.focus(); // Focus vào ô để thấy con trỏ
+                                    
+                                    // Thêm hiệu ứng nháy vàng để dễ nhìn thấy
+                                    const oldBg = activeInput.style.backgroundColor;
+                                    activeInput.style.transition = "background-color 0.2s";
+                                    activeInput.style.backgroundColor = "#fef08a"; // Màu vàng nhạt
+                                    
+                                    // Sau 0.5s thì trả lại màu cũ (KHÔNG XÓA TEXT)
                                     setTimeout(() => {
-                                        activeInput.classList.remove('bg-green-100', 'text-green-800');
-                                        // Tự động xóa ô input sau khi xử lý xong (tùy chọn)
-                                        activeInput.value = ''; 
-                                    }, 1000);
+                                        activeInput.style.backgroundColor = oldBg || "";
+                                        // Lưu ý: Mình đã bỏ dòng activeInput.value = '' để bạn nhìn thấy mã
+                                    }, 500);
+                                } else {
+                                    console.error("Không tìm thấy ô nhập liệu (Input)!");
                                 }
 
-                                // --- BƯỚC 2: GỬI DỮ LIỆU ĐI XỬ LÝ ---
-                                addToCart(code.rawValue);
+                                // 3. Gửi dữ liệu đi xử lý (Thêm vào giỏ hàng)
+                                try {
+                                    addToCart(code.rawValue);
+                                } catch (err) {
+                                    console.error("Lỗi thêm giỏ hàng:", err);
+                                    showAlert("Lỗi", "Mã đọc được nhưng không thêm được: " + err.message, "error");
+                                }
                             }
                         }
                     } catch (err) {
