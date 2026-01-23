@@ -222,15 +222,8 @@
     
 			<div id="reader" class="w-full h-full absolute inset-0 z-0"></div>
 
-			<!--<div class="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
-				<div class="w-64 h-64 border-2 border-white/50 rounded-3xl relative shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]">
-					<div class="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-white rounded-tl-xl -mt-1 -ml-1"></div>
-					<div class="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-white rounded-tr-xl -mt-1 -mr-1"></div>
-					<div class="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-white rounded-bl-xl -mb-1 -ml-1"></div>
-					<div class="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-white rounded-br-xl -mb-1 -mr-1"></div>
-					<div class="absolute inset-0 border-b-2 border-green-400 opacity-50 animate-[scan_2s_infinite]"></div>
-				</div>
-			</div> -->
+			<video id="scan-video" class="w-full h-full object-cover" autoplay playsinline muted></video>
+			<canvas id="scan-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
 
 			<button id="btn-stop-cam" onclick="stopScanner()" class="hidden absolute top-4 right-4 z-40 bg-black/50 text-white p-2 rounded-full border border-white/30 backdrop-blur-md hover:bg-red-600 transition">
 				<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -1151,122 +1144,150 @@
             if (data) { productsDB = data; renderProductList(); }
         }
 
-        // --- SCANNER ---
-        function startScanner() {
-			// 1. Kiểm tra nếu đang chạy thì không bật thêm (tránh lỗi "Already under transition")
-			if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
-				return;
-			}
+        // --- SCANNER MỚI (NATIVE + WASM) ---
+        let isScanning = false;
+        let barcodeDetector = null;
+        let scanStream = null;
 
-			// 2. Ẩn giao diện chờ, hiện nút tắt
-			document.getElementById('camera-placeholder').classList.add('hidden');
-			const btnStop = document.getElementById('btn-stop-cam');
-			if(btnStop) btnStop.classList.remove('hidden');
-			
-			// 3. Khởi tạo thư viện
-			// Lưu ý: verbose=false để tắt log rác trong console
-			html5QrcodeScanner = new Html5Qrcode("reader", { verbose: false });
-			
-			// 4. Cấu hình quét (Giữ nguyên các tối ưu tốc độ)
-			const config = {
-				fps: 25, 
-				qrbox: { width: 250, height: 250 }, // Vùng quét (logic)
-				aspectRatio: window.innerWidth / window.innerHeight,
-				formatsToSupport: [ 
-					Html5QrcodeSupportedFormats.EAN_13,
-					Html5QrcodeSupportedFormats.EAN_8,
-					Html5QrcodeSupportedFormats.CODE_128,
-					Html5QrcodeSupportedFormats.UPC_A,
-					Html5QrcodeSupportedFormats.UPC_E,
-					Html5QrcodeSupportedFormats.QR_CODE
-				]
-			};
+        // Hàm khởi tạo bộ giải mã (Chạy 1 lần duy nhất)
+        async function initBarcodeDetector() {
+            if (barcodeDetector) return barcodeDetector;
 
-			// 5. Bắt đầu quét
-			// SỬA LỖI: Chỉ truyền { facingMode: "environment" }, KHÔNG truyền thêm focusMode
-			html5QrcodeScanner.start(
-				{ facingMode: "environment" }, 
-				config, 
-				(decodedText) => {
-					const currentTime = Date.now();
-
-					// LOGIC CHỐNG QUÉT LIÊN TỤC:
-					// Nếu mã này GIỐNG mã vừa quét VÀ thời gian chưa đủ 2 giây -> BỎ QUA
-					if (decodedText === lastScannedCode && (currentTime - lastScanTime < SCAN_DELAY)) {
-						return; 
-					}
-
-					// Nếu mã khác hoặc đã đủ thời gian chờ -> Chấp nhận
-					lastScannedCode = decodedText;
-					lastScanTime = currentTime;
-
-					// Phát tiếng "Bíp" nhẹ để báo hiệu đã nhận (nếu muốn)
-					playBeepSound(); 
-
-					// Thêm vào giỏ
-					addToCart(decodedText);
-				}, 
-				() => {}
-			).catch(err => {
-				console.error("Lỗi khởi động Camera:", err);
-				
-				// --- XỬ LÝ LỖI CỤ THỂ ---
-				// 1. Lỗi bị chặn quyền (NotAllowedError)
-				if (err.name === "NotAllowedError" || err.toString().includes("Permission")) {
-					 showAlert("⚠️ KHÔNG THỂ MỞ CAMERA!",'Lý do: Bạn đã chặn quyền truy cập.\n\nCách sửa: Bấm vào biểu tượng ổ khóa 🔒 trên thanh địa chỉ -> Bật quyền Camera -> Tải lại trang.','error');
-				} 
-				// 2. Lỗi do camera đang bận hoặc khởi động chưa xong (Transition)
-				else if (err.toString().includes("transition")) {
-					 console.log("Camera đang khởi động, vui lòng chờ...");
-					 return; // Không cần stopScanner, cứ để nó chạy tiếp
-				} 
-				// 3. Các lỗi khác
-				else {
-					 showAlert("Lỗi",'Lỗi không xác định: ' + err, 'error');
-				}
-
-				// Reset về màn hình chờ nếu gặp lỗi nghiêm trọng
-				stopScanner(); 
-			});
-		}
-		
-		function playBeepSound() {
-			// Tạo âm thanh bíp ngắn bằng Web Audio API (không cần file mp3)
-			const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-			const oscillator = audioCtx.createOscillator();
-			const gainNode = audioCtx.createGain();
-
-			oscillator.connect(gainNode);
-			gainNode.connect(audioCtx.destination);
-
-			oscillator.type = "sine"; // Kiểu âm thanh
-			oscillator.frequency.value = 800; // Tần số (độ cao)
-			gainNode.gain.value = 0.1; // Âm lượng nhỏ vừa phải
-
-			oscillator.start();
-			setTimeout(() => oscillator.stop(), 100); // Kêu trong 0.1 giây rồi tắt
-		}
-		
-        async function stopScanner() {
-            if (html5QrcodeScanner) {
-                try { 
-					await html5QrcodeScanner.stop(); 
-					html5QrcodeScanner = null;
-					
-					if (currentScanMode === 'default') {
-						document.getElementById('camera-placeholder').classList.remove('hidden'); 
-					} else {
-						// Nếu đang ở chế độ nút nhỏ thì vẫn ẩn nút to
-						document.getElementById('camera-placeholder').classList.add('hidden');
-					}
-					
-					//document.getElementById('camera-placeholder').classList.remove('hidden'); 
-					document.getElementById('btn-stop-cam').classList.add('hidden'); 
-				} 
-                catch (err) { 
-					console.log(err); 
-				}
+            const formats = ['qr_code', 'ean_13', 'code_128', 'code_39', 'upc_a', 'upc_e'];
+            
+            // Ưu tiên dùng Native (Chrome Android/macOS)
+            if ('BarcodeDetector' in window) {
+                try {
+                    const nativeDetector = new window.BarcodeDetector({ formats });
+                    // Kiểm tra xem native có hỗ trợ định dạng cơ bản không
+                    const supported = await window.BarcodeDetector.getSupportedFormats();
+                    if (supported.includes('qr_code')) {
+                        console.log('Using Native Barcode Detector ⚡');
+                        barcodeDetector = nativeDetector;
+                        return barcodeDetector;
+                    }
+                } catch (e) { console.log('Native detector failed, switching to polyfill...'); }
             }
+
+            // Fallback sang Polyfill (Wasm) nếu Native không có
+            if (window.BarcodeDetectorPolyfill) {
+                console.log('Using Wasm Barcode Detector 📦');
+                barcodeDetector = new window.BarcodeDetectorPolyfill({ formats });
+            }
+            return barcodeDetector;
+        }
+
+        async function startScanner() {
+            // 1. Chặn nếu đang quét
+            if (isScanning) return;
+            
+            // 2. Ẩn giao diện chờ
+            document.getElementById('camera-placeholder').classList.add('hidden');
+            const btnStop = document.getElementById('btn-stop-cam');
+            if(btnStop) btnStop.classList.remove('hidden');
+
+            const videoEl = document.getElementById('scan-video');
+            const canvasEl = document.getElementById('scan-canvas');
+            const ctx = canvasEl.getContext('2d', { willReadFrequently: true });
+
+            try {
+                // 3. Khởi tạo Detector
+                const detector = await initBarcodeDetector();
+                if (!detector) throw new Error("Không thể khởi tạo bộ quét mã.");
+
+                // 4. Mở Camera (Full HD để bắt mã vạch tốt hơn)
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { 
+                        facingMode: "environment",
+                        width: { ideal: 1920 }, 
+                        height: { ideal: 1080 },
+                        focusMode: "continuous" // Hỗ trợ Android lấy nét
+                    }
+                });
+                
+                scanStream = stream;
+                videoEl.srcObject = stream;
+                await videoEl.play();
+                isScanning = true;
+
+                // 5. Vòng lặp quét (Loop)
+                const renderLoop = async () => {
+                    if (!isScanning || videoEl.paused || videoEl.ended) return;
+
+                    // Vẽ lại canvas để khớp kích thước video
+                    if (canvasEl.width !== videoEl.videoWidth) {
+                        canvasEl.width = videoEl.videoWidth;
+                        canvasEl.height = videoEl.videoHeight;
+                    }
+
+                    try {
+                        const codes = await detector.detect(videoEl);
+                        
+                        // Xóa khung vẽ cũ
+                        ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+
+                        if (codes.length > 0) {
+                            const code = codes[0]; // Lấy mã đầu tiên
+                            
+                            // Vẽ khung đỏ bao quanh mã
+                            const { x, y, width, height } = code.boundingBox;
+                            ctx.strokeStyle = "#00ff00"; // Màu xanh lá
+                            ctx.lineWidth = 4;
+                            ctx.strokeRect(x, y, width, height);
+
+                            // --- LOGIC XỬ LÝ KẾT QUẢ ---
+                            const currentTime = Date.now();
+                            // Chống quét lặp lại (Debounce 2 giây)
+                            if (code.rawValue !== lastScannedCode || (currentTime - lastScanTime > SCAN_DELAY)) {
+                                lastScannedCode = code.rawValue;
+                                lastScanTime = currentTime;
+                                
+                                playBeepSound();
+                                addToCart(code.rawValue);
+                            }
+                        }
+                    } catch (err) {
+                        // Lỗi detect thường do camera chưa load xong frame, có thể bỏ qua
+                    }
+
+                    requestAnimationFrame(renderLoop);
+                };
+
+                renderLoop();
+
+            } catch (err) {
+                console.error("Lỗi Camera:", err);
+                showAlert("Lỗi Camera", "Không thể truy cập camera. Vui lòng cấp quyền hoặc thử lại.", 'error');
+                stopScanner();
+            }
+        }
+
+        async function stopScanner() {
+            isScanning = false;
+            
+            // Dừng camera
+            if (scanStream) {
+                scanStream.getTracks().forEach(track => track.stop());
+                scanStream = null;
+            }
+
+            const videoEl = document.getElementById('scan-video');
+            if (videoEl) videoEl.srcObject = null;
+
+            // Xóa khung vẽ
+            const canvasEl = document.getElementById('scan-canvas');
+            if (canvasEl) {
+                const ctx = canvasEl.getContext('2d');
+                ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+            }
+
+            // Cập nhật UI
+            if (currentScanMode === 'default') {
+                document.getElementById('camera-placeholder').classList.remove('hidden'); 
+            } else {
+                document.getElementById('camera-placeholder').classList.add('hidden');
+            }
+            document.getElementById('btn-stop-cam').classList.add('hidden');
         }
 
         // --- CART ---
@@ -3349,6 +3370,11 @@
 					.catch(err => console.log('Lỗi PWA:', err));
 			});
 		}
+	</script>
+	<script type="module">
+		import { BarcodeDetector } from "https://cdn.jsdelivr.net/npm/barcode-detector@2/dist/es/index.min.js";
+		// Gán vào window để dùng được ở các hàm bên dưới
+		window.BarcodeDetectorPolyfill = BarcodeDetector; 
 	</script>
 </body>
 </html>
