@@ -1112,6 +1112,70 @@
 			if(navigator.vibrate) navigator.vibrate(50);
 		}
 
+		// --- HÀM LẮNG NGHE REALTIME (Tự động cập nhật dữ liệu) ---
+		let realtimeChannel = null;
+
+		function setupRealtimeListeners() {
+			// Nếu đã có kết nối cũ thì hủy trước để tránh trùng lặp
+			if (realtimeChannel) client.removeChannel(realtimeChannel);
+
+			console.log("📡 Đang kết nối Realtime...");
+
+			realtimeChannel = client
+				.channel('public-db-changes') // Tên kênh bất kỳ
+				
+				// 1. Lắng nghe thay đổi bảng SẢN PHẨM (products)
+				// (Khi bán hàng hoặc trả hàng -> Tự cập nhật kho và danh sách)
+				.on(
+					'postgres_changes', 
+					{ event: '*', schema: 'public', table: 'products' }, 
+					(payload) => {
+						console.log('♻️ Kho hàng thay đổi:', payload);
+						fetchProducts(); // Tải lại danh sách sản phẩm
+					}
+				)
+
+				// 2. Lắng nghe thay đổi bảng ĐƠN HÀNG (orders)
+				// (Khi có đơn mới hoặc trả hàng -> Tự cập nhật doanh thu & lịch sử)
+				.on(
+					'postgres_changes', 
+					{ event: '*', schema: 'public', table: 'orders' }, 
+					(payload) => {
+						console.log('💰 Đơn hàng thay đổi:', payload);
+						
+						// Nếu đang mở Admin Doanh thu -> Tải lại số liệu
+						if (!document.getElementById('admin-revenue').classList.contains('hidden')) {
+							loadRevenue(); 
+							viewRevenueDetail();
+						}
+
+						// Nếu đang mở Lịch sử đơn hàng -> Tải lại danh sách
+						if (!document.getElementById('history-modal').classList.contains('hidden')) {
+							openHistory();
+						}
+					}
+				)
+				
+				// 3. Lắng nghe thay đổi bảng CÀI ĐẶT (app_settings)
+				// (Admin đổi cấu hình -> Nhân viên tự cập nhật ngay)
+				.on(
+					 'postgres_changes',
+					 { event: 'UPDATE', schema: 'public', table: 'app_settings' },
+					 () => {
+						 console.log('⚙️ Cài đặt thay đổi');
+						 fetchSystemSettings();
+						 // Kiểm tra lại bảo trì
+						 checkSession(); 
+					 }
+				)
+
+				.subscribe((status) => {
+					if (status === 'SUBSCRIBED') {
+						console.log('✅ Đã kết nối Realtime thành công!');
+					}
+				});
+		}
+
         // === SYSTEM FUNCTIONS ===
         async function checkSession() {
 			try {
@@ -1145,6 +1209,7 @@
 					updateParkedBadge();
 					updateCartUI();
 					startHeartbeat();
+					setupRealtimeListeners();
 				}
 			} catch (err) { console.log(err); forceLogout(); }
 		}
@@ -1200,49 +1265,65 @@
 
         // ======================= CUSTOM MODAL LOGIC (TRÁI TIM UI MỚI) =======================
         let modalCallback = null;
+		let modalCancelCallback = null;
 
-        function showAlert(title, msg, type = 'info', callback = null) {
-            const modal = document.getElementById('custom-alert');
-            const iconEl = document.getElementById('alert-icon');
-            const actionsEl = document.getElementById('alert-actions');
-            
-            document.getElementById('alert-title').innerText = title;
-            document.getElementById('alert-msg').innerHTML = msg;
-            modalCallback = callback;
+		function showAlert(title, msg, type = 'info', callback = null, cancelCallback = null) {
+			const modal = document.getElementById('custom-alert');
+			const iconEl = document.getElementById('alert-icon');
+			const actionsEl = document.getElementById('alert-actions');
+			
+			document.getElementById('alert-title').innerText = title;
+			document.getElementById('alert-msg').innerHTML = msg;
+			
+			modalCallback = callback;
+			modalCancelCallback = cancelCallback; // Lưu callback hủy
 
-            // Cấu hình giao diện theo loại thông báo
-            let iconHtml = 'ℹ️', colorClass = 'bg-blue-50 text-blue-600', btnsHtml = '';
+			let iconHtml = 'ℹ️', colorClass = 'bg-blue-50 text-blue-600', btnsHtml = '';
 
-            if (type === 'success') {
-                iconHtml = '✅'; colorClass = 'bg-green-50 text-green-600';
-                btnsHtml = `<button onclick="closeAlert()" class="col-span-2 py-4 text-green-600 font-bold hover:bg-green-50">Đóng</button>`;
-            } else if (type === 'error') {
-                iconHtml = '⚠️'; colorClass = 'bg-red-50 text-red-600';
-                btnsHtml = `<button onclick="closeAlert()" class="col-span-2 py-4 text-red-600 font-bold hover:bg-red-50">Đóng</button>`;
-            } else if (type === 'confirm') {
-                iconHtml = '❓'; colorClass = 'bg-orange-50 text-orange-600';
-                btnsHtml = `
-                    <button onclick="closeAlert()" class="py-4 text-gray-500 font-semibold hover:bg-gray-100 border-r">Hủy</button>
-                    <button onclick="confirmAction()" class="py-4 text-blue-600 font-bold hover:bg-blue-50">Đồng ý</button>`;
-            } else {
-                btnsHtml = `<button onclick="closeAlert()" class="col-span-2 py-4 text-blue-600 font-bold hover:bg-blue-50">OK</button>`;
-            }
+			if (type === 'success') {
+				iconHtml = '✅'; colorClass = 'bg-green-50 text-green-600';
+				btnsHtml = `<button onclick="closeAlert()" class="col-span-2 py-4 text-green-600 font-bold hover:bg-green-50">Đóng</button>`;
+			} else if (type === 'error') {
+				iconHtml = '⚠️'; colorClass = 'bg-red-50 text-red-600';
+				btnsHtml = `<button onclick="closeAlert()" class="col-span-2 py-4 text-red-600 font-bold hover:bg-red-50">Đóng</button>`;
+			} else if (type === 'confirm') {
+				iconHtml = '❓'; colorClass = 'bg-orange-50 text-orange-600';
+				// 3. Sửa nút Hủy: Gọi cancelAction() thay vì closeAlert()
+				btnsHtml = `
+					<button onclick="cancelAction()" class="py-4 text-gray-500 font-semibold hover:bg-gray-100 border-r">Hủy</button>
+					<button onclick="confirmAction()" class="py-4 text-blue-600 font-bold hover:bg-blue-50">Đồng ý</button>`;
+			} else {
+				btnsHtml = `<button onclick="closeAlert()" class="col-span-2 py-4 text-blue-600 font-bold hover:bg-blue-50">OK</button>`;
+			}
 
-            iconEl.className = `w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${colorClass}`;
-            iconEl.innerHTML = iconHtml;
-            actionsEl.innerHTML = btnsHtml;
-            modal.classList.remove('hidden');
-        }
+			iconEl.className = `w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl ${colorClass}`;
+			iconEl.innerHTML = iconHtml;
+			actionsEl.innerHTML = btnsHtml;
+			modal.classList.remove('hidden');
+		}
 
         function closeAlert() {
-            document.getElementById('custom-alert').classList.add('hidden');
-            modalCallback = null;
-        }
+			document.getElementById('custom-alert').classList.add('hidden');
+			modalCallback = null;
+			modalCancelCallback = null; // Reset biến hủy
+		}
 
         function confirmAction() {
             if (modalCallback) modalCallback();
             closeAlert();
         }
+
+		function cancelAction() {
+			const cancelCb = modalCancelCallback; // Lưu lại biến tạm
+			closeAlert(); // Đóng bảng hiện tại trước
+			
+			// Nếu có hành động hủy, chạy nó sau 100ms (để bảng cũ kịp đóng)
+			if (cancelCb) {
+				setTimeout(() => {
+					cancelCb();
+				}, 100);
+			}
+		}
 
         // ======================= APP LOGIC =======================
 
@@ -1737,7 +1818,7 @@
 					// B. Lưu chi tiết món
 					const items = cart.map(i => ({ 
 						order_id: order.id, 
-						product_id: i.id, // Lưu ID để sau này trả hàng cho chuẩn
+						product_id: i.id,
 						product_name: i.name, 
 						quantity: i.quantity, 
 						price: i.finalPrice, 
@@ -1755,24 +1836,28 @@
 					});
 					await Promise.all(updatePromises);
 
-					// --- QUAN TRỌNG: CHUẨN BỊ DỮ LIỆU IN TRƯỚC KHI XÓA GIỎ ---
-					// Copy giỏ hàng hiện tại ra một biến riêng để in
+					// D. Chuẩn bị dữ liệu in (Copy giỏ hàng ra biến riêng)
 					const printData = {
 						id: order.id,
 						time: new Date(),
 						staff: currentUserEmail,
-						items: [...cart], // Copy lại danh sách món
+						items: [...cart], 
 						total: t,
 						received: r,
 						change: r - t
 					};
 
-					// D. Xử lý In & Dọn dẹp
-					// Kiểm tra cấu hình: Có cho phép in không?
+					// --- [QUAN TRỌNG] DỌN DẸP GIỎ HÀNG NGAY LẬP TỨC ---
+					// (Đảm bảo đơn hàng được coi là hoàn tất trước khi hỏi in)
+					finishOrder(); 
+
+					// E. HIỂN THỊ THÔNG BÁO (Tùy theo cài đặt)
 					if (globalSettings.allow_print) {
+						// TRƯỜNG HỢP 1: CÓ BẬT IN -> Hỏi khách
 						showAlert(
 							"Thanh toán thành công ✅", 
-							`Đơn hàng #${order.id} đã được lưu.<br>Bạn có muốn in hóa đơn không?`, 
+							// Thông báo rõ ràng là đã trừ kho rồi
+							`Đơn hàng #${order.id} <b>đã được lưu & trừ kho</b>.<br>Bạn có muốn in hóa đơn không?`, 
 							'confirm', 
 							() => {
 								// Nếu bấm Đồng ý -> In hóa đơn
@@ -1785,18 +1870,22 @@
 									printData.received, 
 									printData.change
 								);
-								// In xong mới dọn dẹp
-								finishOrder();
 							},
-							// Nếu bấm Hủy (Không in) -> Cũng phải dọn dẹp để bán đơn mới
 							() => {
-								finishOrder();
+								showAlert(
+									"Thanh toán thành công ✅", 
+									"Đơn hàng đã được lưu & <b>Đã trừ kho</b>!", 
+									'success'
+								);
 							}
 						);
 					} else {
-						// Nếu tắt chế độ in -> Dọn dẹp luôn
-						showAlert("Thành công", "Đơn hàng đã lưu & Đã trừ kho!", 'success');
-						finishOrder();
+						// TRƯỜNG HỢP 2: TẮT IN -> Báo thành công & Đã trừ kho
+						showAlert(
+							"Thanh toán thành công ✅", 
+							"Đơn hàng đã được lưu & <b>Đã trừ kho</b>!", 
+							'success'
+						);
 					}
 				}
 			});
