@@ -2849,55 +2849,59 @@
 
 		// Hàm Xử Lý Logic Chính
 		async function confirmReturn() {
+			// 1. Kiểm tra an toàn
 			if (!currentReturnItem) return;
-			
+
+			// 2. [QUAN TRỌNG] Lưu thông tin vào biến cục bộ ngay lập tức
+			// Vì lát nữa gọi closeReturnModal() thì currentReturnItem sẽ bị null
+			const item = currentReturnItem; 
+
 			const qtyToReturn = parseInt(document.getElementById('return-qty-input').value);
 			
 			// Validate
-			if (qtyToReturn <= 0 || qtyToReturn > currentReturnItem.maxQty) {
+			if (qtyToReturn <= 0 || qtyToReturn > item.maxQty) {
 				return showAlert("Lỗi", "Số lượng trả không hợp lệ!", "error");
 			}
 
-			// Xác nhận lần cuối
-			const refundMoney = formatMoney(qtyToReturn * currentReturnItem.price);
+			// Tính toán số tiền hoàn
+			const refundMoney = formatMoney(qtyToReturn * item.price);
 			
-			closeReturnModal(); // Đóng modal nhập trước
+			// 3. Đóng modal (Lúc này currentReturnItem sẽ thành null, nhưng ta đã có biến 'item')
+			closeReturnModal(); 
 
+			// 4. Hiện thông báo xác nhận
 			showAlert("Xác nhận trả hàng", 
-				`Nhận lại <b>${qtyToReturn}</b> sản phẩm "${currentReturnItem.name}".<br>
+				`Nhận lại <b>${qtyToReturn}</b> sản phẩm "${item.name}".<br>
 				 Hoàn tiền cho khách: <b class="text-red-600 text-xl">${refundMoney}</b>.<br><br>
 				 Kho hàng sẽ được tự động cộng thêm.`, 
 				"confirm", 
 				async () => {
 					try {
-						// 1. Cập nhật bảng order_items (Giữ nguyên code cũ)
-						const { data: currentItem } = await client.from('order_items').select('returned_quantity, order_id').eq('id', currentReturnItem.itemId).single();
+						// --- SỬA LỖI: Dùng biến 'item' thay vì 'currentReturnItem' ở mọi chỗ bên dưới ---
+						
+						// A. Cập nhật bảng order_items
+						const { data: currentItem } = await client.from('order_items').select('returned_quantity, order_id').eq('id', item.itemId).single();
 						const newReturnedQty = (currentItem.returned_quantity || 0) + qtyToReturn;
-						await client.from('order_items').update({ returned_quantity: newReturnedQty }).eq('id', currentReturnItem.itemId);
+						await client.from('order_items').update({ returned_quantity: newReturnedQty }).eq('id', item.itemId);
 
-						// 2. Cập nhật kho hàng (Giữ nguyên code cũ)
-						if (currentReturnItem.prodId) {
-							const prodInDb = productsDB.find(p => p.id === currentReturnItem.prodId);
+						// B. Cập nhật kho hàng (products)
+						if (item.prodId) {
+							const prodInDb = productsDB.find(p => p.id === item.prodId);
 							if (prodInDb) {
 								const newStock = (prodInDb.quantity || 0) + qtyToReturn;
-								await client.from('products').update({ quantity: newStock }).eq('id', currentReturnItem.prodId);
+								await client.from('products').update({ quantity: newStock }).eq('id', item.prodId);
 							}
 						}
 
-						// --- 3. MỚI: CẬP NHẬT DOANH THU ĐƠN HÀNG (orders) ---
-						// Tính số tiền vừa hoàn trả
-						const refundMoney = qtyToReturn * currentReturnItem.price;
-						const orderId = currentItem.order_id; // Lấy ID đơn hàng từ item
+						// C. Cập nhật doanh thu đơn hàng (orders)
+						const refundAmt = qtyToReturn * item.price;
+						const orderId = currentItem.order_id;
 
-						// Lấy số tiền đã hoàn trước đó của đơn hàng này
 						const { data: ord } = await client.from('orders').select('returned_amount').eq('id', orderId).single();
 						
-						// Cộng dồn tiền hoàn mới
-						const newTotalRefund = (ord.returned_amount || 0) + refundMoney;
+						const newTotalRefund = (ord.returned_amount || 0) + refundAmt;
 						
-						// Lưu ngược vào DB
 						await client.from('orders').update({ returned_amount: newTotalRefund }).eq('id', orderId);
-						// ----------------------------------------------------
 
 						showAlert("Thành công", "Đã trả hàng, nhập kho và trừ doanh thu!", "success");
 						
